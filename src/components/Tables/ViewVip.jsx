@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
 import { URL } from '../../assests/mocData/config';
+
 const TableContainer = styled.div`
   padding: 20px;
   border-radius: 10px;
   width: 90%;
-  top:5%;
-  margin: auto;/* Dark background */
+  top: 5%;
+  margin: auto;
 `;
 
 const StyledTable = styled.table`
@@ -48,22 +49,50 @@ const HeaderText = styled.h2`
   margin-bottom: 20px;
 `;
 
-const ViewVip= () => {
-  const [vipData, setvipData] = useState([]);
+const ViewVip = () => {
+  const [vipData, setVipData] = useState([]);
 
   useEffect(() => {
-    const fetchvipData = async () => {
+    const fetchVipData = async () => {
       try {
-        const response = await axios.get(`${URL}/vip`); // Update with your backend API URL
-        setvipData(response.data);
-        console.log(response.data)
+        const response = await axios.get(`${URL}/vip`);
+        setVipData(response.data);
       } catch (error) {
-        console.error("Error fetching vip data:", error);
+        console.error("Error fetching VIP data:", error);
       }
     };
 
-    fetchvipData();
+    fetchVipData();
   }, []);
+
+  // Function to format the date to 'dd/mm/yyyy'
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB');
+  };
+
+  // Calculate the day count from the first business date to today
+  const getDayCountFromFirstBusiness = (firstBusinessDate) => {
+    const startDate = new Date(firstBusinessDate);
+    const currentDate = new Date();
+    const timeDifference = currentDate - startDate;
+    const dayCount = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+    return `${dayCount} days`;
+  };
+
+  // Determine VIP status based on months since first business date
+  const getVipStatus = (firstBusinessDate) => {
+    const startDate = new Date(firstBusinessDate);
+    const currentDate = new Date();
+    const monthsDifference = 
+      (currentDate.getFullYear() - startDate.getFullYear()) * 12 + 
+      (currentDate.getMonth() - startDate.getMonth());
+
+    if (monthsDifference >= 60) return "NLI";
+    if (monthsDifference >= 36) return "SLI";
+    if (monthsDifference >= 12) return "DLI";
+    return "Beginner VIP";
+  };
 
   return (
     <TableContainer>
@@ -75,6 +104,8 @@ const ViewVip= () => {
             <TableHeader>Vip Name</TableHeader>
             <TableHeader>Vip ID</TableHeader>
             <TableHeader>First Business Date</TableHeader>
+            <TableHeader>Vip System Date</TableHeader>
+            <TableHeader>Vip Status</TableHeader>
             <TableHeader last>Actions</TableHeader>
           </tr>
         </thead>
@@ -84,7 +115,9 @@ const ViewVip= () => {
               <TableCell>{index + 1}</TableCell>
               <TableCell>{vip.vipName}</TableCell>
               <TableCell>{vip.vipId}</TableCell>
-              <TableCell>{vip.firstbuisness}</TableCell>
+              <TableCell>{formatDate(vip.firstBusiness)}</TableCell>
+              <TableCell>{getDayCountFromFirstBusiness(vip.firstBusiness)}</TableCell>
+              <TableCell>{getVipStatus(vip.firstBusiness)}</TableCell>
               <TableCell>Edit | Delete</TableCell>
             </TableRow>
           ))}

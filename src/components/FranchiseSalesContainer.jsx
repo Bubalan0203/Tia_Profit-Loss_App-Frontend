@@ -6,7 +6,7 @@ import FranchiseSalesTable from "./FranchiseSalesTable";
 function FranchiseSalesContainer() {
   return (
     <FsalesContainer>
-      <NavBar selected={"vip"} />
+      <NavBar selected={"fsales"} />
       <FranchiseSalesTable />
     </FsalesContainer>
   );

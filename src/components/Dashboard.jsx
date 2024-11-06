@@ -31,7 +31,7 @@ const Dashboard = () => {
         const token = localStorage.getItem('token');
 
         if (!token) {
-            navigate('/'); // Redirect to login if no token
+   // Redirect to login if no token navigate('/'); 
         }
 
         // Simulate fetching user data
@@ -44,7 +44,7 @@ const Dashboard = () => {
             })
             .catch(() => {
                 localStorage.removeItem('token');
-                navigate('/'); // Redirect if token is invalid
+        // Redirect to login if no token navigate('/'); 
             });
     }, [navigate]);
 

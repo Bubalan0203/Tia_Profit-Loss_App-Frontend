@@ -72,7 +72,8 @@ const CancelButton = styled(Button)({
 const AddVipForm = () => {
   const [vipName, setVipName] = useState('');
   const [vipId, setVipId] = useState('');
-  const [firstBusiness, setFirstBusiness] = useState('');
+
+  const [firstBusiness, setFirstBusiness] = useState(''); // Corrected field name
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -81,15 +82,21 @@ const AddVipForm = () => {
       const response = await axios.post(`${URL}/vip`, {
         vipName,
         vipId,
-        firstBusiness,
+        firstBusiness, // Use consistent field name here
       });
       console.log('VIP added successfully:', response.data);
-      // You can reset the form or show a success message here
+  
+      // Reset form fields after successful submission
+      setVipName('');
+      setVipId('');
+      setFirstBusiness('');
     } catch (error) {
-      console.error('Error adding VIP:', error);
-      // Handle error (e.g., show an error message)
+      console.error('Error adding VIP:', error.response?.data || error.message);
     }
   };
+  
+  
+  
 
   return (
     <PageContainer>
@@ -112,7 +119,7 @@ const AddVipForm = () => {
           onChange={(e) => setVipId(e.target.value)}
         />
         <StyledTextField 
-          label="VIP First Business Date" 
+          label="VIP First Buisness Date" 
           variant="outlined" 
           type="date"
           fullWidth 
