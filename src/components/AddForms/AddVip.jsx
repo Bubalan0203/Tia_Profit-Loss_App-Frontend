@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { TextField, Button, Box, Typography } from '@mui/material';
 import { styled } from '@mui/system';
+import { useSnackbar } from 'notistack';
 import { URL } from '../../assests/mocData/config';
 
 const PageContainer = styled(Box)({
@@ -70,33 +71,32 @@ const CancelButton = styled(Button)({
 });
 
 const AddVipForm = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [vipName, setVipName] = useState('');
   const [vipId, setVipId] = useState('');
-
-  const [firstBusiness, setFirstBusiness] = useState(''); // Corrected field name
+  const [firstBusiness, setFirstBusiness] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
+
     try {
       const response = await axios.post(`${URL}/vip`, {
         vipName,
         vipId,
-        firstBusiness, // Use consistent field name here
+        firstBusiness,
       });
       console.log('VIP added successfully:', response.data);
-  
+      enqueueSnackbar('VIP added successfully!', { variant: 'success' });
+
       // Reset form fields after successful submission
       setVipName('');
       setVipId('');
       setFirstBusiness('');
     } catch (error) {
       console.error('Error adding VIP:', error.response?.data || error.message);
+      enqueueSnackbar('Failed to add VIP.', { variant: 'error' });
     }
   };
-  
-  
-  
 
   return (
     <PageContainer>
@@ -119,13 +119,13 @@ const AddVipForm = () => {
           onChange={(e) => setVipId(e.target.value)}
         />
         <StyledTextField 
-          label="VIP First Buisness Date" 
+          label="VIP First Business Date" 
           variant="outlined" 
           type="date"
           fullWidth 
           value={firstBusiness}
           onChange={(e) => setFirstBusiness(e.target.value)}
-          InputLabelProps={{ shrink: true }} // Ensures label stays above when date is filled
+          InputLabelProps={{ shrink: true }}
         />
         <ButtonContainer>
           <SubmitButton type="submit">Submit</SubmitButton>

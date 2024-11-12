@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { TextField, Button, Box, Typography, MenuItem } from '@mui/material';
+import React, { useState } from 'react';
+import { TextField, Button, Box, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 import axios from 'axios';
 import { useSnackbar } from 'notistack';
@@ -37,12 +37,6 @@ const StyledTextField = styled(TextField)({
     borderColor: '#f00d88',
   },
   '& .MuiInputLabel-root': {
-    color: '#f00d88',
-  },
-});
-
-const StyledDropdown = styled(StyledTextField)({
-  '& .MuiSelect-icon': {
     color: '#f00d88',
   },
 });
@@ -86,71 +80,49 @@ const TotalBox = styled(Box)({
   fontWeight: 'bold',
 });
 
-const AddFsalesForm = () => {
+const AddExpenseForm = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const [franchiseName, setFranchiseName] = useState('');
+  const [productName, setProductName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [count, setCount] = useState(1);
-  const [franchiseList, setFranchiseList] = useState([]);
 
-  useEffect(() => {
-    const fetchFranchises = async () => {
-      try {
-        const response = await axios.get(`${URL}/franchise`);
-        setFranchiseList(response.data);
-      } catch (error) {
-        console.error("Error fetching franchises:", error);
-      }
-    };
-    fetchFranchises();
-  }, []);
-
+  // Calculate total
   const total = price ? (parseFloat(price) * count).toFixed(2) : 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    // Validation for the required fields
-    if (!price || !count || !description) {
+    
+    if (!productName || !description || !price || !count) {
       enqueueSnackbar("Please fill in all required fields.", { variant: 'warning' });
       return;
     }
-  
-    const selectedFranchise = franchiseList.find(f => f.franchiseName === franchiseName);
-    if (!selectedFranchise) {
-      enqueueSnackbar("Selected franchise not found.", { variant: 'warning' });
-      return;
-    }
-  
-    const total = parseFloat(price) * count;
-  
+
     try {
-      const response = await axios.post(`${URL}/franchise/${selectedFranchise.franchiseId}/sales`, {
-        products: [{
-          product: description,
-          price: parseFloat(price),
-          count: parseInt(count),
-          total: total.toFixed(2),
-        }],
+      const response = await axios.post(`${URL}/fsales`, {
+        productName,
+        description,
+        price,
+        count,
+        total,
       });
-  
-      if (response.status === 200) {
-        // Reset the form on success
-        setFranchiseName('');
+
+      if (response.status === 201) {
+        enqueueSnackbar("Sales record added successfully!", { variant: 'success' });
+        
+        setProductName('');
         setDescription('');
         setPrice('');
         setCount(1);
-        enqueueSnackbar("Sales record added successfully!", { variant: 'success' });
       }
     } catch (error) {
       console.error("Error adding sales record:", error);
-      enqueueSnackbar("Error adding sales record. Please try again.", { variant: 'error' });
+      enqueueSnackbar("Failed to add sales record.", { variant: 'error' });
     }
   };
 
   const handleCancel = () => {
-    setFranchiseName('');
+    setProductName('');
     setDescription('');
     setPrice('');
     setCount(1);
@@ -159,25 +131,18 @@ const AddFsalesForm = () => {
   return (
     <PageContainer>
       <Typography variant="h5" sx={{ color: '#fff', alignSelf: 'flex-start', marginBottom: '16px' }}>
-        Franchise Sales Details
+        Other Expense Details
       </Typography>
       <FormContainer>
-        <StyledDropdown
-          select
-          label="Franchise Name"
-          variant="outlined"
-          fullWidth
-          value={franchiseName}
-          onChange={(e) => setFranchiseName(e.target.value)}
-        >
-          {franchiseList.map((franchise) => (
-            <MenuItem key={franchise.franchiseId} value={franchise.franchiseName}>
-              {franchise.franchiseName}
-            </MenuItem>
-          ))}
-        </StyledDropdown>
         <StyledTextField 
-          label="Product" 
+          label="Product Name" 
+          variant="outlined" 
+          fullWidth 
+          value={productName} 
+          onChange={(e) => setProductName(e.target.value)} 
+        />
+        <StyledTextField 
+          label="Description" 
           variant="outlined" 
           fullWidth 
           value={description} 
@@ -213,4 +178,4 @@ const AddFsalesForm = () => {
   );
 };
 
-export default AddFsalesForm;
+export default AddExpenseForm;

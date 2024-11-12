@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { styled } from "styled-components";
-import icon from "../assests/images/mustang.jpg";
+import icon from "../assests/images/tia.png";
 import { useNavigate } from "react-router-dom";
 import {
   Avatar,
@@ -96,10 +96,10 @@ function NavBar({ selected, user }) {
             <span className="side-text">FRANCHISE SALES</span>
           </NavItem>
           <NavItem
-            isSelected={selected === "message"}
-            onClick={() => navigate("/message")}
+            isSelected={selected === "expense"}
+            onClick={() => navigate("/expense")}
           >
-            <span className="side-text">CEO MESSAGES</span>
+            <span className="side-text">OTHER EXPENSES</span>
           </NavItem>
           <NavItem isSelected={selected === ""}>
             <span className="side-text">

@@ -7,6 +7,7 @@ import { eye } from "react-icons-kit/feather/eye";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useSnackbar } from "notistack";  // Import useSnackbar
+import { URL } from "../assests/mocData/config";
 
 
 const Login = () => {
@@ -79,13 +80,13 @@ const Login = () => {
             e.preventDefault();
         }
         try {
-            const response = await axios.post('http://localhost:5000/login', { email, password });
+            const response = await axios.post(`${URL}/users/login`, { email, password });
             localStorage.setItem('token', response.data.token);
 
             // Show success message using enqueueSnackbar
             enqueueSnackbar('Login successful', { variant: 'success' });
 
-            navigate('/dashboard'); // Redirect after login
+            navigate('/hosstaff'); // Redirect after login
         } catch (err) {
             setError(err.response.data.msg || 'Something went wrong');
 

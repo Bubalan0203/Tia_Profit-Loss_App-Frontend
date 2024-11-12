@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography } from '@mui/material';
 import { styled } from '@mui/system';
+import { useSnackbar } from 'notistack';
 import axios from 'axios';
 import { URL } from '../../assests/mocData/config';
+
 const PageContainer = styled(Box)({
   width: '100%',
   display: 'flex',
@@ -69,6 +71,7 @@ const CancelButton = styled(Button)({
 });
 
 const AddFranchiseForm = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [formData, setFormData] = useState({
     franchiseName: '',
     franchiseId: '',
@@ -79,21 +82,22 @@ const AddFranchiseForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const response = await axios.post(`${URL}/franchise`, formData, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    console.log('Response:', response.data);
-    setFormData({ franchiseName: '', franchiseId: '', branchName: '' });
-  } catch (error) {
-    console.error('Error submitting form:', error.response?.data || error.message);
-  }
-};
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(`${URL}/franchise`, formData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Response:', response.data);
+      enqueueSnackbar('Franchise successfully added!', { variant: 'success' });
+      setFormData({ franchiseName: '', franchiseId: '', branchName: '' });
+    } catch (error) {
+      console.error('Error submitting form:', error.response?.data || error.message);
+      enqueueSnackbar('Failed to add franchise.', { variant: 'error' });
+    }
+  };
 
   return (
     <PageContainer>

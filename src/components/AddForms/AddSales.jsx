@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography } from '@mui/material';
 import { styled } from '@mui/system';
-import axios from 'axios'; // Make sure to install axios by running `npm install axios`
+import axios from 'axios';
+import { useSnackbar } from 'notistack';
 import { URL } from '../../assests/mocData/config';
 
 const PageContainer = styled(Box)({
@@ -80,6 +81,7 @@ const TotalBox = styled(Box)({
 });
 
 const AddSalesForm = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [productName, setProductName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -91,14 +93,12 @@ const AddSalesForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
     if (!productName || !description || !price || !count) {
-      alert("Please fill in all required fields.");
+      enqueueSnackbar("Please fill in all required fields.", { variant: 'warning' });
       return;
     }
 
     try {
-      // Send POST request to backend
       const response = await axios.post(`${URL}/sales`, {
         productName,
         description,
@@ -107,11 +107,9 @@ const AddSalesForm = () => {
         total,
       });
 
-      // If the request is successful
       if (response.status === 201) {
-      
+        enqueueSnackbar("Sales record added successfully!", { variant: 'success' });
         
-        // Clear form fields
         setProductName('');
         setDescription('');
         setPrice('');
@@ -119,7 +117,15 @@ const AddSalesForm = () => {
       }
     } catch (error) {
       console.error("Error adding sales record:", error);
+      enqueueSnackbar("Failed to add sales record.", { variant: 'error' });
     }
+  };
+
+  const handleCancel = () => {
+    setProductName('');
+    setDescription('');
+    setPrice('');
+    setCount(1);
   };
 
   return (
@@ -156,14 +162,14 @@ const AddSalesForm = () => {
           fullWidth 
           type="number" 
           value={count} 
-          onChange={(e) => setCount(Math.max(1, parseInt(e.target.value) || 1))} // Ensure count is at least 1
+          onChange={(e) => setCount(Math.max(1, parseInt(e.target.value) || 1))} 
         />
         <TotalBox>
           Total: ₹{total}
         </TotalBox>
         <ButtonContainer>
           <SubmitButton onClick={handleSubmit}>Submit</SubmitButton>
-          <CancelButton onClick={() => { /* handle cancel logic if needed */ }}>
+          <CancelButton onClick={handleCancel}>
             Cancel
           </CancelButton>
         </ButtonContainer>
