@@ -101,6 +101,12 @@ function NavBar({ selected, user }) {
           >
             <span className="side-text">OTHER EXPENSES</span>
           </NavItem>
+          <NavItem
+            isSelected={selected === "fileupload"}
+            onClick={() => navigate("/fileupload")}
+          >
+            <span className="side-text">File upload</span>
+          </NavItem>
           <NavItem isSelected={selected === ""}>
             <span className="side-text">
               <Tooltip title="Account settings">
