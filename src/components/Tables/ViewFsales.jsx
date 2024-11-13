@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
 import { URL } from '../../assests/mocData/config';
-import { TableBody, TextField, Button, Modal, Box } from '@mui/material';
+import {  TextField, Button, Modal, Box, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
+import { format } from 'date-fns';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -51,6 +52,39 @@ const HeaderText = styled.h2`
   margin-bottom: 20px;
 `;
 
+const FilterSelect = styled(FormControl)`
+  min-width: 300px;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #311c31;
+  & .MuiInputBase-root {
+    color: white;
+  }
+  & .MuiSvgIcon-root {
+    color: white;
+  }
+`;
+
+const FilterContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
+const BackButtonContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const FilterControlsContainer = styled.div`
+  display: flex;
+  gap: 10px;
+`;
+
 
 const ViewFsales = () => {
   const [salesData, setSalesData] = useState([]);
@@ -60,6 +94,11 @@ const ViewFsales = () => {
   const [expandedProductIndex, setExpandedProductIndex] = useState(null);
   const [currentFranchiseIndex, setCurrentFranchiseIndex] = useState(null);
   const [currentProductIndex, setCurrentProductIndex] = useState(null);
+  const [monthFilter, setMonthFilter] = useState('');
+  const [yearFilter, setYearFilter] = useState('');
+  const yearOptions = Array.from({ length: 11 }, (_, i) => 2020 + i); // Generates [2020, 2021, ..., 2030]
+
+
 
   useEffect(() => {
     fetchSalesData();
@@ -97,6 +136,17 @@ const ViewFsales = () => {
   const handlePaymentModalClose = () => {
     setPaymentModalOpen(false);
   };
+  
+  const handleMonthChange = (event) => setMonthFilter(event.target.value);
+  const handleYearChange = (event) => setYearFilter(event.target.value);
+
+  const filteredProducts = salesData[expandedFranchise]?.products?.filter(product => {
+    if (!monthFilter && !yearFilter) return true;
+    const date = new Date(product.addedDate);
+    const productMonth = date.getMonth() + 1; // getMonth returns 0-based month
+    const productYear = date.getFullYear();
+    return (!monthFilter || productMonth === parseInt(monthFilter)) && (!yearFilter || productYear === parseInt(yearFilter));
+  });
 
   const handlePaymentSubmit = () => {
     if (!paymentAmount || isNaN(paymentAmount) || parseFloat(paymentAmount) === 0) {
@@ -189,68 +239,108 @@ const ViewFsales = () => {
         </StyledTable>
       </>
     ) : (
-      <>
-        <HeaderText>Sales for {salesData[expandedFranchise]?.franchiseName}</HeaderText>
-        {expandedProductIndex === null ? (
-          <>
-            <button onClick={handleBackClick}>Back</button>
-            <StyledTable>
-              <thead>
-                <tr>
-                  <TableHeader first>S no</TableHeader>
-                  <TableHeader>Product</TableHeader>
-                  <TableHeader>Price</TableHeader>
-                  <TableHeader>Count</TableHeader>
-                  <TableHeader>Total</TableHeader>
-                  <TableHeader>Payment Paid</TableHeader>
-                  <TableHeader>Payment Pending</TableHeader>
-                  <TableHeader>Action</TableHeader>
-                  <TableHeader last>View Stats</TableHeader>
-                </tr>
-              </thead>
-              <tbody>
-                {salesData[expandedFranchise]?.products?.map((product, productIndex) => (
-                  <TableRow key={`${salesData[expandedFranchise]?._id}-${productIndex}`}>
-                    <TableCell>{productIndex + 1}</TableCell>
-                    <TableCell>{product.product}</TableCell>
-                    <TableCell>₹{product.price}</TableCell>
-                    <TableCell>{product.count}</TableCell>
-                    <TableCell>₹{parseFloat(product.total)}</TableCell>
-                    <TableCell>₹{product.paymentPaid || 0}</TableCell>
-                    <TableCell>₹{product.paymentPending || 0}</TableCell>
-                    <TableCell>
-                      <button onClick={() => handlePayClick(expandedFranchise, productIndex)}>Pay</button> 
-                    </TableCell>
-                    <TableCell>
-                      <button onClick={() => setExpandedProductIndex(productIndex)}
-                         disabled={product.paymentPaid===0}>View Stats</button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </StyledTable>
-          </>
+         <>
+          <HeaderText>Sales for {salesData[expandedFranchise]?.franchiseName}</HeaderText>
+          {expandedProductIndex === null ? (
+            <>
+             <FilterContainer>
+              <BackButtonContainer>
+                <button onClick={() => setExpandedFranchise(null)}>Back</button>
+              </BackButtonContainer>
+              
+              <FilterControlsContainer>
+                <FilterSelect>
+                  <InputLabel>Month</InputLabel>
+                  <Select value={monthFilter} onChange={handleMonthChange}
+                  sx={{
+                      width: '130px',
+                    }}>
+                    <MenuItem value="">All</MenuItem>
+                    {[...Array(12)].map((_, i) => (
+                      <MenuItem key={i} value={i + 1}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</MenuItem>
+                    ))}
+                  </Select>
+                </FilterSelect>
+
+                <FilterSelect>
+                  <InputLabel>Year</InputLabel>
+                  <Select value={yearFilter} onChange={handleYearChange}
+                   sx={{
+                    width: '100px',
+                  }}>
+                    <MenuItem value="">All</MenuItem>
+                    {yearOptions.map(year => (
+                      <MenuItem key={year} value={year}>{year}</MenuItem>
+                    ))}
+                  </Select>
+                </FilterSelect>
+              </FilterControlsContainer>
+            </FilterContainer>
+
+
+              <StyledTable>
+                <thead>
+                  <tr>
+                    <TableHeader first>S no</TableHeader>
+                    <TableHeader>Product</TableHeader>
+                    <TableHeader>Price</TableHeader>
+                    <TableHeader>Count</TableHeader>
+                    <TableHeader>Total</TableHeader>
+                    <TableHeader>Payment Paid</TableHeader>
+                    <TableHeader>Payment Pending</TableHeader>
+                    <TableHeader>Action</TableHeader>
+                    <TableHeader last>View Stats</TableHeader>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProducts.map((product, productIndex) => (
+                    <TableRow key={`${salesData[expandedFranchise]?._id}-${productIndex}`}>
+                      <TableCell>{productIndex + 1}</TableCell>
+                      <TableCell>{product.product}</TableCell>
+                      <TableCell>₹{product.price}</TableCell>
+                      <TableCell>{product.count}</TableCell>
+                      <TableCell>₹{parseFloat(product.total)}</TableCell>
+                      <TableCell>₹{product.paymentPaid || 0}</TableCell>
+                      <TableCell>₹{product.paymentPending || 0}</TableCell>
+                      <TableCell>
+                        <button onClick={() => handlePayClick(expandedFranchise, productIndex)}>Pay</button> 
+                      </TableCell>
+                      <TableCell>
+                        <button onClick={() => setExpandedProductIndex(productIndex)} disabled={product.paymentPaid === 0}>View Stats</button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </tbody>
+              </StyledTable>
+            </>
         ) : (
           <>
-            <button onClick={handleBackToProductsClick}>Back to Products</button>
+            <button onClick={handleBackToProductsClick}>Back </button>
+    
             <StyledTable>
-              <thead>
-                <tr>
-                  <TableHeader first>S no</TableHeader>
-                  <TableHeader>Date</TableHeader>
-                  <TableHeader last>Payment</TableHeader>
-                </tr>
-              </thead>
-              <tbody>
-                {salesData[expandedFranchise]?.products[expandedProductIndex]?.payments?.map((payment, paymentIndex) => (
-                  <TableRow key={`${salesData[expandedFranchise]?._id}-${expandedProductIndex}-${paymentIndex}`}>
-                    <TableCell>{paymentIndex + 1}</TableCell>
-                    <TableCell>{payment.date}</TableCell>
-                    <TableCell>₹{payment.amount}</TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </StyledTable>
+                <thead>
+                  <tr>
+                    <TableHeader first>S no</TableHeader>
+                    <TableHeader>Date</TableHeader>
+                    <TableHeader>Time</TableHeader> {/* Added Time header */}
+                    <TableHeader last>Payment</TableHeader>
+                  </tr>
+                </thead>
+                <tbody>
+                  {salesData[expandedFranchise]?.products[expandedProductIndex]?.payments?.map((payment, paymentIndex) => {
+                    const formattedDate = format(new Date(payment.date), 'dd/MM/yyyy');
+                    const formattedTime = format(new Date(payment.date), 'HH:mm:ss'); // Format the time
+                    return (
+                      <TableRow key={`${salesData[expandedFranchise]?._id}-${expandedProductIndex}-${paymentIndex}`}>
+                        <TableCell>{paymentIndex + 1}</TableCell>
+                        <TableCell>{formattedDate}</TableCell>
+                        <TableCell>{formattedTime}</TableCell> {/* Display formatted time */}
+                        <TableCell>₹{payment.amount}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </tbody>
+              </StyledTable>
           </>
         )}
       </>
