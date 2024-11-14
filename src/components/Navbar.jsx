@@ -107,6 +107,12 @@ function NavBar({ selected, user }) {
           >
             <span className="side-text">File upload</span>
           </NavItem>
+          <NavItem
+            isSelected={selected === "vipfranchiseupload"}
+            onClick={() => navigate("/vipfranchiseupload")}
+          >
+            <span className="side-text">VIP Franchise Upload</span>
+          </NavItem>
           <NavItem isSelected={selected === ""}>
             <span className="side-text">
               <Tooltip title="Account settings">
