@@ -114,6 +114,12 @@ function NavBar({ selected, user }) {
             <span className="side-text">FILE UPLOAD</span>
           </NavItem>
           <NavItem
+            isSelected={selected === "vipupload"}
+            onClick={() => navigate("/vipupload")}
+          >
+            <span className="side-text">VIP UPLOAD</span>
+          </NavItem>
+          <NavItem
             isSelected={selected === "vipfranchiseupload"}
             onClick={() => navigate("/vipfranchiseupload")}
           >

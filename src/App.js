@@ -12,6 +12,8 @@ import ExpenseDetailContainer from './components/ExpenseDetailsContainer';
 import ExcelUploader from './components/AddForms/Fileupload';
 import Product from './components/Product';
 import UploadVIPFranchise from './components/AddForms/VipfranchiseUpload';
+import UploadVIP from './components/AddForms/VipUpload';
+
 const App = () => {
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
@@ -41,6 +43,7 @@ const App = () => {
                     <Route path="/fileupload" element={<ExcelUploader/>} />
                     <Route path="/product" element={<Product/>} />
                     <Route path="/vipfranchiseupload" element={<UploadVIPFranchise/>}/>
+                    <Route path="/vipupload" element={<UploadVIP/>}/>
                 </Routes>
             </Router>
         </SnackbarProvider>
