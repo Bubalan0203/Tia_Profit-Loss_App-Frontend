@@ -84,6 +84,12 @@ function NavBar({ selected, user }) {
             <span className="side-text">VIP</span>
           </NavItem>
           <NavItem
+            isSelected={selected === "product"}
+            onClick={() => navigate("/product")}
+          >
+            <span className="side-text">PRODUCTS</span>
+          </NavItem>
+          <NavItem
             isSelected={selected === "sales"}
             onClick={() => navigate("/sales")}
           >
@@ -105,13 +111,13 @@ function NavBar({ selected, user }) {
             isSelected={selected === "fileupload"}
             onClick={() => navigate("/fileupload")}
           >
-            <span className="side-text">File upload</span>
+            <span className="side-text">FILE UPLOAD</span>
           </NavItem>
           <NavItem
             isSelected={selected === "vipfranchiseupload"}
             onClick={() => navigate("/vipfranchiseupload")}
           >
-            <span className="side-text">VIP Franchise Upload</span>
+            <span className="side-text">VIP FRANCHISE UPLOAD</span>
           </NavItem>
           <NavItem isSelected={selected === ""}>
             <span className="side-text">
@@ -233,7 +239,7 @@ background: #25272d;
 
   #nav-bar {
     height: 100vh;
-    width: 210px;
+    width: 250px;
     left: 1vw;
     top: 1vw;
     background: #27252d;
