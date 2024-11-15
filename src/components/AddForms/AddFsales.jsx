@@ -154,7 +154,6 @@ const AddFsalesForm = () => {
       });
   
       if (response.status === 200) {
-        // Reset the form on success
         setFranchiseName('');
         setDescription('');
         setPrice('');
