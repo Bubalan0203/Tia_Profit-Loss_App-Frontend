@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TextField, Button, Box, Typography } from '@mui/material';
 import { styled } from '@mui/system';
+import axios from 'axios'; // For making API calls
+import { useSnackbar } from 'notistack'; // Snackbar for notifications
+import { URL } from '../../assests/mocData/config';
 
 const PageContainer = styled(Box)({
   width: '100%',
@@ -68,6 +71,38 @@ const CancelButton = styled(Button)({
 });
 
 const AddHOSForm = () => {
+  const { enqueueSnackbar } = useSnackbar();
+  const [formData, setFormData] = useState({
+    hoName: '',
+    hoId: '',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${URL}/hostaff`, formData);
+      enqueueSnackbar('HO Staff created successfully', { variant: 'success' });
+      setFormData({ hoName: '', hoId: '' });
+    } catch (error) {
+      enqueueSnackbar(
+        error.response?.data?.error || 'Failed to create HO Staff',
+        { variant: 'error' }
+      );
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({ hoName: '', hoId: '' });
+  };
+
   return (
     <PageContainer>
       <Typography 
@@ -76,12 +111,26 @@ const AddHOSForm = () => {
       >
         HO Staff Details
       </Typography>
-      <FormContainer>
-        <StyledTextField label="HO Name" variant="outlined" fullWidth />
-        <StyledTextField label="HO ID" variant="outlined" fullWidth />
+      <FormContainer component="form" onSubmit={handleSubmit}>
+        <StyledTextField
+          label="HO Name"
+          variant="outlined"
+          fullWidth
+          name="hoName"
+          value={formData.hoName}
+          onChange={handleChange}
+        />
+        <StyledTextField
+          label="HO ID"
+          variant="outlined"
+          fullWidth
+          name="hoId"
+          value={formData.hoId}
+          onChange={handleChange}
+        />
         <ButtonContainer>
-          <SubmitButton>Submit</SubmitButton>
-          <CancelButton>Cancel</CancelButton>
+          <SubmitButton type="submit">Submit</SubmitButton>
+          <CancelButton type="button" onClick={handleCancel}>Cancel</CancelButton>
         </ButtonContainer>
       </FormContainer>
     </PageContainer>

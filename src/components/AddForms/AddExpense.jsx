@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TextField, Button, Box, Typography } from '@mui/material';
+import React, { useState ,useEffect} from 'react';
+import { TextField, Button, Box, Typography,Select, MenuItem, InputLabel, FormControl } from '@mui/material';
 import { styled } from '@mui/system';
 import axios from 'axios';
 import { useSnackbar } from 'notistack';
@@ -86,6 +86,25 @@ const AddExpenseForm = () => {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [count, setCount] = useState(1);
+  const [products, setProducts] = useState([]);
+
+
+   // Fetch products on component mount
+   useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get(`${URL}/product`);
+        if (response.status === 200) {
+          setProducts(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        enqueueSnackbar("Failed to load products.", { variant: 'error' });
+      }
+    };
+    fetchProducts();
+  }, []);
+
 
   // Calculate total
   const total = price ? (parseFloat(price) * count).toFixed(2) : 0;
@@ -134,13 +153,33 @@ const AddExpenseForm = () => {
         Other Expense Details
       </Typography>
       <FormContainer>
-        <StyledTextField 
-          label="Product Name" 
-          variant="outlined" 
-          fullWidth 
-          value={productName} 
-          onChange={(e) => setProductName(e.target.value)} 
-        />
+           <FormControl fullWidth margin="normal">
+          <InputLabel sx={{ color: '#f00d88' }}>Product Name</InputLabel>
+          <Select
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            displayEmpty
+            inputProps={{ 'aria-label': 'Product Name' }}
+            sx={{
+              backgroundColor: '#000',
+              color: '#fff',
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#333' },
+              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#f00d88' },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#f00d88' },
+              '& .MuiSelect-icon': {
+                fontSize: '23px', // Adjust the size of the dropdown icon
+                color: '#f00d88', // Color for the dropdown arrow
+              }
+            }}
+          >
+            <MenuItem value="" disabled></MenuItem>  {/* Placeholder */}
+            {products.map((product) => (
+              <MenuItem key={product._id} value={product.productName}>
+                {product.productName} {/* Display the product name */}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <StyledTextField 
           label="Description" 
           variant="outlined" 

@@ -1,12 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { styled } from "styled-components";
-import axios from "axios";
-import { Box, Tabs, Tab,CircularProgress } from "@mui/material";
-import { enqueueSnackbar } from "notistack";
+import { Box, Tabs, Tab, CircularProgress } from "@mui/material";
 import AddHoStaff from "./AddForms/AddHoStaff";
 import ViewHoStaff from "./Tables/ViewHoStaff";
-
-
+import AddSalary from "./AddForms/AddSalary"; // Import the AddSalary component
 
 function HosListTable({ user, courseListTitles }) {
   const [filter, setFilter] = useState(false);
@@ -19,8 +16,7 @@ function HosListTable({ user, courseListTitles }) {
   };
 
   const handleChange = (event, newValue) => {
-   
-    setSelectedView(newValue);// 2 seconds
+    setSelectedView(newValue);
   };
 
   return (
@@ -32,12 +28,12 @@ function HosListTable({ user, courseListTitles }) {
           overflowY: "scroll",
         }}
       >
-         {loading && (
+        {loading && (
           <LoadingOverlay>
             <CircularProgress sx={{ color: "#f00d88" }} />
           </LoadingOverlay>
         )}
-        
+
         <Box
           sx={{
             marginTop: "1rem",
@@ -77,19 +73,20 @@ function HosListTable({ user, courseListTitles }) {
           >
             <Tab label="View HOS" value="ViewHOSList" />
             <Tab label="Add HOS" value="AddHOSList" />
+            <Tab label="Add Salary" value="AddSalaryList" /> {/* New Tab */}
           </Tabs>
         </Box>
 
         <div>
-          {selectedView === "ViewHOSList" && (
-            <ViewHoStaff filterData={filterData} />
-          )}
+          {selectedView === "ViewHOSList" && <ViewHoStaff filterData={filterData} />}
           {selectedView === "AddHOSList" && <AddHoStaff />}
+          {selectedView === "AddSalaryList" && <AddSalary/>} {/* New View */}
         </div>
       </div>
     </HosTableContainer>
   );
 }
+
 const LoadingOverlay = styled.div`
   position: absolute;
   top: 0;
@@ -102,12 +99,12 @@ const LoadingOverlay = styled.div`
   background: rgba(0, 0, 0, 0.5);
   z-index: 9999;
 `;
+
 const HosTableContainer = styled.div`
   width: 100%;
-
   #course-list {
     padding: 2rem;
-     position: relative;
+    position: relative;
   }
 
   ::placeholder {
@@ -166,6 +163,7 @@ const HosTableContainer = styled.div`
   input:focus {
     outline: none;
   }
+
   ::placeholder {
     color: #bf2f82c4;
     opacity: 1; /* Firefox */
@@ -213,6 +211,7 @@ const HosTableContainer = styled.div`
     padding: 1rem !important;
     text-align: center;
   }
+
   h4 {
     text-align: center;
   }
@@ -231,6 +230,7 @@ const HosTableContainer = styled.div`
   thead tr {
     border-bottom: 1rem solid #25272d;
   }
+
   tr {
     border-color: #25272d;
   }

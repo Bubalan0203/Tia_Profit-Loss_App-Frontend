@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Box, Typography, MenuItem } from '@mui/material';
+import { TextField, Button, Box, Typography, MenuItem,Select, InputLabel, FormControl, } from '@mui/material';
 import { styled } from '@mui/system';
 import axios from 'axios';
 import { useSnackbar } from 'notistack';
@@ -88,11 +88,29 @@ const TotalBox = styled(Box)({
 
 const AddFsalesForm = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const [productName, setProductName] = useState('');
   const [franchiseName, setFranchiseName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [count, setCount] = useState(1);
   const [franchiseList, setFranchiseList] = useState([]);
+  const [products, setProducts] = useState([]);
+  
+  // Fetch products on component mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get(`${URL}/product`);
+        if (response.status === 200) {
+          setProducts(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        enqueueSnackbar("Failed to load products.", { variant: 'error' });
+      }
+    };
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     const fetchFranchises = async () => {
@@ -112,7 +130,7 @@ const AddFsalesForm = () => {
     e.preventDefault();
   
     // Validation for the required fields
-    if (!price || !count || !description) {
+    if (!price || !count || !productName) {
       enqueueSnackbar("Please fill in all required fields.", { variant: 'warning' });
       return;
     }
@@ -128,7 +146,7 @@ const AddFsalesForm = () => {
     try {
       const response = await axios.post(`${URL}/franchise/${selectedFranchise.franchiseId}/sales`, {
         products: [{
-          product: description,
+          product:productName,
           price: parseFloat(price),
           count: parseInt(count),
           total: total.toFixed(2),
@@ -176,13 +194,33 @@ const AddFsalesForm = () => {
             </MenuItem>
           ))}
         </StyledDropdown>
-        <StyledTextField 
-          label="Product" 
-          variant="outlined" 
-          fullWidth 
-          value={description} 
-          onChange={(e) => setDescription(e.target.value)} 
-        />
+        <FormControl fullWidth margin="normal">
+          <InputLabel sx={{ color: '#f00d88' }}>Product Name</InputLabel>
+          <Select
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            displayEmpty
+            inputProps={{ 'aria-label': 'Product Name' }}
+            sx={{
+              backgroundColor: '#000',
+              color: '#fff',
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#333' },
+              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#f00d88' },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#f00d88' },
+              '& .MuiSelect-icon': {
+                fontSize: '23px', // Adjust the size of the dropdown icon
+                color: '#f00d88', // Color for the dropdown arrow
+              }
+            }}
+          >
+            <MenuItem value="" disabled></MenuItem>  {/* Placeholder */}
+            {products.map((product) => (
+              <MenuItem key={product._id} value={product.productName}>
+                {product.productName} {/* Display the product name */}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <StyledTextField 
           label="Price" 
           variant="outlined" 
