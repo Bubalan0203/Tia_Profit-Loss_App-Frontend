@@ -80,25 +80,26 @@ const ViewVip = () => {
     const fetchData = async () => {
       try {
         // Fetch data from the backend with the current month and year
-        const response = await fetch(`${URL}/vipdata/checkRecord?month=${month}&year=${year}`);
+        const response = await fetch(`${URL}/vipfranchiseupload/checkRecord?month=${month}&year=${year}`);
         const result = await response.json();
-
-        // Ensure the response is an array
-        if (Array.isArray(result)) {
-          setData(result); // Store the array data
+  
+        // Ensure the response contains 'records' and handle it accordingly
+        if (result.records && Array.isArray(result.records)) {
+          setData(result.records); // Store the records array in the state
         } else {
           console.error('Unexpected response format:', result);
-          setData([]); // Reset data if response is not an array
+          setData([]); // Reset data if response is not in the expected format
         }
       } catch (error) {
         console.error('Error fetching data:', error);
         setData([]); // Reset to an empty array on error
       }
     };
-
+  
     fetchData();
   }, [month, year]);
-
+  
+  
   // Filter data based on month and year
   useEffect(() => {
     const filtered = data.filter((item) => {
@@ -111,7 +112,7 @@ const ViewVip = () => {
 
   return (
     <TableContainer>
-      <HeaderText>View Vip</HeaderText>
+      <HeaderText>View Vip Franchise</HeaderText>
       <FilterContainer>
         <FilterSelect value={month} onChange={(e) => setMonth(e.target.value)}>
           {[

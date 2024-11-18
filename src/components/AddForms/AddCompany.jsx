@@ -4,7 +4,7 @@ import axios from "axios";
 import { URL } from "../../assests/mocData/config";
 import styled from "styled-components";
 
-const UploadVIP = () => {
+const UploadCompany = () => {
   const [fileData, setFileData] = useState(null);
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
@@ -32,10 +32,10 @@ const UploadVIP = () => {
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
       const filteredData = jsonData.map(row => ({
-        collection: parseFloat(row["Collection"] || 0),
-        totalPayment: parseFloat(row["Total Payment"] || 0),
-        paymentPaid: parseFloat(row["Payment Paid"] || 0),
-        paymentPending: parseFloat(row["Payment Pending"] || 0),
+        courseFee: parseFloat(row["Course Fee"] || 0),
+        companyRevenue: parseFloat(row["Company Revenue"] || 0),
+        paymentPaid: parseFloat(row["Amount Paid"] || 0),
+        paymentPending: parseFloat(row["Amount Pending"] || 0),
       }));
 
       const calculatedTotals = calculateTotals(filteredData);
@@ -47,19 +47,19 @@ const UploadVIP = () => {
   const calculateTotals = (data) => {
     return data.reduce(
       (acc, row) => {
-        acc.collection += row.collection;
-        acc.totalPayment += row.totalPayment;
+        acc.courseFee+= row.courseFee;
+        acc.companyRevenue += row.companyRevenue;
         acc.paymentPaid += row.paymentPaid;
         acc.paymentPending += row.paymentPending;
         return acc;
       },
-      { collection: 0, totalPayment: 0, paymentPaid: 0, paymentPending: 0 }
+      { courseFee: 0, companyRevenue: 0, paymentPaid: 0, paymentPending: 0 }
     );
   };
 
   const checkIfRecordExists = async () => {
     try {
-      const response = await axios.get(`${URL}/vipdata/checkRecord`, {
+      const response = await axios.get(`${URL}/companydata/checkRecord`, {
         params: { month, year },
       });
 
@@ -80,7 +80,7 @@ const UploadVIP = () => {
     }
 
     try {
-      const response = await axios.post(`${URL}/vipdata/upload`, {
+      const response = await axios.post(`${URL}/companydata/upload`, {
         month,
         year,
         totals,
@@ -99,7 +99,7 @@ const UploadVIP = () => {
 
   return (
     <Container>
-      <Heading>Upload VIP Franchise Data</Heading>
+      <Heading>Upload Company  </Heading>
 
       <Form>
         <FileInput>
@@ -134,10 +134,10 @@ const UploadVIP = () => {
         {totals && (
           <Totals>
             <h2>Calculated Totals:</h2>
-            <p>Collection: {totals.collection.toFixed(2)}</p>
-            <p>Total Payment: {totals.totalPayment.toFixed(2)}</p>
-            <p>Payment Paid: {totals.paymentPaid.toFixed(2)}</p>
-            <p>Payment Pending: {totals.paymentPending.toFixed(2)}</p>
+            <p>Course Fee: {totals.courseFee.toFixed(2)}</p>
+            <p>Company Revenue: {totals.companyRevenue.toFixed(2)}</p>
+            <p>Amount Paid: {totals.paymentPaid.toFixed(2)}</p>
+            <p>Amount Pending: {totals.paymentPending.toFixed(2)}</p>
           </Totals>
         )}
 
@@ -159,21 +159,23 @@ const UploadVIP = () => {
   );
 };
 
-export default UploadVIP;
+export default UploadCompany;
 
 // Styled Components
 const Container = styled.div`
-  max-width: 800px;
+  max-width: 810px;
   margin: 0 auto;
   padding: 20px;
-  background-color: #f9f9f9;
+  border:1px solid #000
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  color:#fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  margin-top:5%;
 `;
 
 const Heading = styled.h1`
   font-size: 1.8em;
-  color: #333;
+  color: #fff;
   text-align: center;
   margin-bottom: 20px;
 `;
@@ -186,7 +188,7 @@ const Form = styled.div`
 
 const Label = styled.label`
   font-size: 1.1em;
-  color: #555;
+  color: #fff;
 `;
 
 const FileInput = styled.div``;
@@ -232,7 +234,7 @@ const ButtonContainer = styled.div`
 const Button = styled.button`
   padding: 12px;
   font-size: 1.1em;
-  background-color: #4caf50;
+  background-color: #f00d88;
   color: white;
   border: none;
   border-radius: 5px;

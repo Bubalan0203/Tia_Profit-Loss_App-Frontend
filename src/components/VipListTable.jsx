@@ -11,7 +11,7 @@ import ViewVip from "./Tables/ViewVip";
 function VipListTable({ user, courseListTitles }) {
   const [filter, setFilter] = useState(false);
   const [filterData, setFilterData] = useState("");
-  const [selectedView, setSelectedView] = useState("AddVipList");
+  const [selectedView, setSelectedView] = useState("ViewVipList");
   const [loading, setLoading] = useState(false);
 
   const FilterOpen = () => {
@@ -28,8 +28,7 @@ function VipListTable({ user, courseListTitles }) {
       <div
         id="course-list"
         style={{
-          height: "100vh",
-          overflowY: "scroll",
+  
         }}
       >
          {loading && (

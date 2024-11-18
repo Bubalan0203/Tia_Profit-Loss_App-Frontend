@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "styled-components";
 import axios from "axios";
-import { Box, Tabs, Tab, CircularProgress } from "@mui/material";
+import { Box, Tabs, Tab,CircularProgress } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
-import AddExpense from "./AddForms/AddExpense"; // Changed
-import ViewExpense from "./Tables/ViewExpense"; // Changed
+import AddVipFran from "./AddForms/AddVipFran";
+import ViewVipFran from "./Tables/ViewVipFran";
 
-function ExpenseListTable({ user, courseListTitles }) { // Changed
+
+
+function VipListTable({ user, courseListTitles }) {
   const [filter, setFilter] = useState(false);
   const [filterData, setFilterData] = useState("");
-  const [selectedView, setSelectedView] = useState("AddExpenseList"); // Changed
+  const [selectedView, setSelectedView] = useState("ViewVipFranList");
   const [loading, setLoading] = useState(false);
 
   const FilterOpen = () => {
@@ -17,23 +19,24 @@ function ExpenseListTable({ user, courseListTitles }) { // Changed
   };
 
   const handleChange = (event, newValue) => {
-    setSelectedView(newValue);
+   
+    setSelectedView(newValue);// 2 seconds
   };
 
   return (
-    <ExpenseTableContainer> {/* Changed */}
+    <VipTableContainer>
       <div
         id="course-list"
         style={{
-        
+          
         }}
       >
-        {loading && (
+         {loading && (
           <LoadingOverlay>
             <CircularProgress sx={{ color: "#f00d88" }} />
           </LoadingOverlay>
         )}
-
+        
         <Box
           sx={{
             marginTop: "1rem",
@@ -71,22 +74,21 @@ function ExpenseListTable({ user, courseListTitles }) { // Changed
               },
             }}
           >
-            <Tab label="View Expense" value="ViewExpenseList" /> {/* Changed */}
-            <Tab label="Add Expense" value="AddExpenseList" /> {/* Changed */}
+            <Tab label="View Vip Franchise" value="ViewVipFranList" />
+            <Tab label="Add Vip Franchise" value="AddVipFranList" />
           </Tabs>
         </Box>
 
         <div>
-          {selectedView === "ViewExpenseList" && ( // Changed
-            <ViewExpense filterData={filterData} /> // Changed
+          {selectedView === "ViewVipFranList" && (
+            <ViewVipFran filterData={filterData} />
           )}
-          {selectedView === "AddExpenseList" && <AddExpense />} {/* Changed */}
+          {selectedView === "AddVipFranList" && <AddVipFran/>}
         </div>
       </div>
-    </ExpenseTableContainer>
-  )
+    </VipTableContainer>
+  );
 }
-
 const LoadingOverlay = styled.div`
   position: absolute;
   top: 0;
@@ -99,25 +101,22 @@ const LoadingOverlay = styled.div`
   background: rgba(0, 0, 0, 0.5);
   z-index: 9999;
 `;
-
-const ExpenseTableContainer = styled.div` {/* Changed */}
+const VipTableContainer = styled.div`
   width: 100%;
 
   #course-list {
     padding: 2rem;
-    position: relative;
+     position: relative;
   }
 
   ::placeholder {
     color: gray;
     opacity: 1; /* Firefox */
   }
-
   ::-ms-input-placeholder {
     /* Edge 12-18 */
     color: gray;
   }
-
   .btn {
     background-color: var(--navbar-dark-primary);
     padding: 1rem;
@@ -126,17 +125,14 @@ const ExpenseTableContainer = styled.div` {/* Changed */}
     display: flex;
     flex-direction: column;
   }
-
   #line {
     background-color: var(--icon-color);
     height: 3px;
     width: 100%;
   }
-
   h2 {
     color: white;
   }
-
   @media only screen and (max-width: 800px) {
     #miniNav {
       display: block !important;
@@ -145,11 +141,9 @@ const ExpenseTableContainer = styled.div` {/* Changed */}
       margin-left: 3rem;
     }
   }
-
   #miniNav {
     display: none;
   }
-
   #searchfield {
     height: 3.5rem;
     padding-right: 25px;
@@ -171,7 +165,6 @@ const ExpenseTableContainer = styled.div` {/* Changed */}
   input:focus {
     outline: none;
   }
-
   ::placeholder {
     color: #bf2f82c4;
     opacity: 1; /* Firefox */
@@ -219,7 +212,6 @@ const ExpenseTableContainer = styled.div` {/* Changed */}
     padding: 1rem !important;
     text-align: center;
   }
-
   h4 {
     text-align: center;
   }
@@ -238,7 +230,6 @@ const ExpenseTableContainer = styled.div` {/* Changed */}
   thead tr {
     border-bottom: 1rem solid #25272d;
   }
-
   tr {
     border-color: #25272d;
   }
@@ -248,4 +239,4 @@ const ExpenseTableContainer = styled.div` {/* Changed */}
   }
 `;
 
-export default ExpenseListTable; // Changed
+export default VipListTable;

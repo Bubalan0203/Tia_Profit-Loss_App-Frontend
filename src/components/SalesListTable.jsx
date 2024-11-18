@@ -28,8 +28,7 @@ function SalesListTable({ user, courseListTitles }) {
       <div
         id="course-list"
         style={{
-          height: "100vh",
-          overflowY: "scroll",
+        
         }}
       >
          {loading && (

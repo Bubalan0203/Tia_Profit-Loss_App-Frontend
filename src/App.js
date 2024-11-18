@@ -11,8 +11,8 @@ import { SnackbarProvider } from 'notistack';
 import ExpenseDetailContainer from './components/ExpenseDetailsContainer';
 import ExcelUploader from './components/AddForms/Fileupload';
 import Product from './components/Product';
-import UploadVIPFranchise from './components/AddForms/VipfranchiseUpload';
-import UploadVIP from './components/AddForms/VipUpload';
+import VipFranDetails from './components/VipFranDetails';
+import CompanyDetailsContainer from './components/CompanyDetailsContainer'
 
 const App = () => {
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -37,13 +37,14 @@ const App = () => {
                     <Route path="/hosstaff" element={<HoDetailsContainer />} />
                     <Route path="/franchise" element={<FranchiseDetailsContainer />} />
                     <Route path="/vip" element={<VipDetailsContainer />} />
+                    <Route path="/vipfranchise" element={<VipFranDetails/>}/>
+                    <Route path="/companyrevenue" element={<CompanyDetailsContainer/>}/>
                     <Route path="/sales" element={<SalesDetailsContainer />} />
                     <Route path="/fsales" element={<FranchiseSalesContainer />} />
                     <Route path="/expense" element={<ExpenseDetailContainer />} />
                     <Route path="/fileupload" element={<ExcelUploader/>} />
                     <Route path="/product" element={<Product/>} />
-                    <Route path="/vipfranchiseupload" element={<UploadVIPFranchise/>}/>
-                    <Route path="/vipupload" element={<UploadVIP/>}/>
+                   
                 </Routes>
             </Router>
         </SnackbarProvider>

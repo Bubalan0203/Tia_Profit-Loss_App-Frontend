@@ -84,6 +84,18 @@ function NavBar({ selected, user }) {
             <span className="side-text">VIP</span>
           </NavItem>
           <NavItem
+            isSelected={selected === "vipfranchise"}
+            onClick={() => navigate("/vipfranchise")}
+          >
+            <span className="side-text">VIP FRANCHISE</span>
+          </NavItem>
+          <NavItem
+            isSelected={selected === "companyrevenue"}
+            onClick={() => navigate("/companyrevenue")}
+          >
+            <span className="side-text">COMPANY REVENUE</span>
+          </NavItem>
+          <NavItem
             isSelected={selected === "product"}
             onClick={() => navigate("/product")}
           >
@@ -113,18 +125,7 @@ function NavBar({ selected, user }) {
           >
             <span className="side-text">FILE UPLOAD</span>
           </NavItem>
-          <NavItem
-            isSelected={selected === "vipupload"}
-            onClick={() => navigate("/vipupload")}
-          >
-            <span className="side-text">VIP UPLOAD</span>
-          </NavItem>
-          <NavItem
-            isSelected={selected === "vipfranchiseupload"}
-            onClick={() => navigate("/vipfranchiseupload")}
-          >
-            <span className="side-text">VIP FRANCHISE UPLOAD</span>
-          </NavItem>
+         
           <NavItem isSelected={selected === ""}>
             <span className="side-text">
               <Tooltip title="Account settings">

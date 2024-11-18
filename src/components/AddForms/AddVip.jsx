@@ -1,143 +1,294 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { TextField, Button, Box, Typography } from '@mui/material';
-import { styled } from '@mui/system';
-import { useSnackbar } from 'notistack';
-import { URL } from '../../assests/mocData/config';
+import React, { useState } from "react";
+import * as XLSX from "xlsx";
+import axios from "axios";
+import { URL } from "../../assests/mocData/config";
+import styled from "styled-components";
 
-const PageContainer = styled(Box)({
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  padding: '20px',
-});
+const UploadVIP = () => {
+  const [fileData, setFileData] = useState(null);
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
+  const [message, setMessage] = useState("");
+  const [totals, setTotals] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false); // For confirmation dialog
 
-const FormContainer = styled(Box)({
-  padding: '20px',
-  borderRadius: '8px',
-  width: '100%',
-  maxWidth: '500px',
-  margin: 'auto',
-});
+  const months = [
+    "January", "February", "March", "April", "May", 
+    "June", "July", "August", "September", 
+    "October", "November", "December"
+  ];
+  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
 
-const StyledTextField = styled(TextField)({
-  marginBottom: '16px',
-  '& .MuiInputBase-root': {
-    backgroundColor: '#000',
-    color: '#fff',
-  },
-  '& .MuiOutlinedInput-notchedOutline': {
-    borderColor: '#333',
-  },
-  '&:hover .MuiOutlinedInput-notchedOutline': {
-    borderColor: '#f00d88',
-  },
-  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-    borderColor: '#f00d88',
-  },
-  '& .MuiInputLabel-root': {
-    color: '#f00d88',
-  },
-});
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
-const ButtonContainer = styled(Box)({
-  display: 'flex',
-  justifyContent: 'center',
-  gap: '24px',
-  marginTop: '16px',
-});
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-const SubmitButton = styled(Button)({
-  backgroundColor: 'transparent',
-  color: '#fff',
-  border: '1px solid #00a152',
-  borderRadius: '20px',
-  padding: '6px 24px',
-  '&:hover': {
-    backgroundColor: '#00a152',
-  },
-});
+      const filteredData = jsonData.map(row => ({
+        collection: parseFloat(row["Collection"] || 0),
+        totalPayment: parseFloat(row["Total Payment"] || 0),
+        paymentPaid: parseFloat(row["Payment Paid"] || 0),
+        paymentPending: parseFloat(row["Payment Pending"] || 0),
+      }));
 
-const CancelButton = styled(Button)({
-  backgroundColor: 'transparent',
-  color: '#fff',
-  border: '1px solid #b71c1c',
-  borderRadius: '20px',
-  padding: '6px 24px',
-  '&:hover': {
-    backgroundColor: '#b71c1c',
-  },
-});
+      const calculatedTotals = calculateTotals(filteredData);
+      setTotals(calculatedTotals);
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
-const AddVipForm = () => {
-  const { enqueueSnackbar } = useSnackbar();
-  const [vipName, setVipName] = useState('');
-  const [vipId, setVipId] = useState('');
-  const [firstBusiness, setFirstBusiness] = useState('');
+  const calculateTotals = (data) => {
+    return data.reduce(
+      (acc, row) => {
+        acc.collection += row.collection;
+        acc.totalPayment += row.totalPayment;
+        acc.paymentPaid += row.paymentPaid;
+        acc.paymentPending += row.paymentPending;
+        return acc;
+      },
+      { collection: 0, totalPayment: 0, paymentPaid: 0, paymentPending: 0 }
+    );
+  };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
+  const checkIfRecordExists = async () => {
     try {
-      const response = await axios.post(`${URL}/vip`, {
-        vipName,
-        vipId,
-        firstBusiness,
+      const response = await axios.get(`${URL}/vipdata/checkRecord`, {
+        params: { month, year },
       });
-      console.log('VIP added successfully:', response.data);
-      enqueueSnackbar('VIP added successfully!', { variant: 'success' });
 
-      // Reset form fields after successful submission
-      setVipName('');
-      setVipId('');
-      setFirstBusiness('');
+      if (response.data.exists) {
+        setShowConfirm(true); // Show the replace confirmation dialog
+      } else {
+        handleSubmit();
+      }
     } catch (error) {
-      console.error('Error adding VIP:', error.response?.data || error.message);
-      enqueueSnackbar('Failed to add VIP.', { variant: 'error' });
+      setMessage(error.response?.data?.message || "An error occurred.");
     }
   };
 
+  const handleSubmit = async (replace = false) => {
+    if (!totals || !month || !year) {
+      setMessage("Please select a file, month, and year.");
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${URL}/vipdata/upload`, {
+        month,
+        year,
+        totals,
+        replace, // Pass the flag for replacing the record
+      });
+      setMessage(response.data.message);
+    } catch (error) {
+      setMessage(error.response?.data?.message || "An error occurred.");
+    }
+  };
+
+  const handleReplaceRecord = () => {
+    handleSubmit(true); // Call handleSubmit with replace set to true
+    setShowConfirm(false); // Close confirmation dialog
+  };
+
   return (
-    <PageContainer>
-      <Typography variant="h5" sx={{ color: '#fff', alignSelf: 'flex-start', marginBottom: '16px' }}>
-        VIP Details
-      </Typography>
-      <FormContainer component="form" onSubmit={handleSubmit}>
-        <StyledTextField 
-          label="VIP Name" 
-          variant="outlined" 
-          fullWidth 
-          value={vipName}
-          onChange={(e) => setVipName(e.target.value)}
-        />
-        <StyledTextField 
-          label="VIP ID" 
-          variant="outlined" 
-          fullWidth 
-          value={vipId}
-          onChange={(e) => setVipId(e.target.value)}
-        />
-        <StyledTextField 
-          label="VIP First Business Date" 
-          variant="outlined" 
-          type="date"
-          fullWidth 
-          value={firstBusiness}
-          onChange={(e) => setFirstBusiness(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-        />
+    <Container>
+      <Heading>Upload VIP Data</Heading>
+
+      <Form>
+        <FileInput>
+          <Label>Upload Excel File:</Label>
+          <InputFile type="file" accept=".xlsx, .xls" onChange={handleFileUpload} />
+        </FileInput>
+
+        <Dropdown>
+          <Label>Select Month:</Label>
+          <Select value={month} onChange={(e) => setMonth(e.target.value)}>
+            <Option value="">Select Month</Option>
+            {months.map((month) => (
+              <Option key={month} value={month}>
+                {month}
+              </Option>
+            ))}
+          </Select>
+        </Dropdown>
+
+        <Dropdown>
+          <Label>Select Year:</Label>
+          <Select value={year} onChange={(e) => setYear(e.target.value)}>
+            <Option value="">Select Year</Option>
+            {years.map((year) => (
+              <Option key={year} value={year}>
+                {year}
+              </Option>
+            ))}
+          </Select>
+        </Dropdown>
+
+        {totals && (
+          <Totals>
+            <h2>Calculated Totals:</h2>
+            <p>Collection: {totals.collection.toFixed(2)}</p>
+            <p>Total Payment: {totals.totalPayment.toFixed(2)}</p>
+            <p>Payment Paid: {totals.paymentPaid.toFixed(2)}</p>
+            <p>Payment Pending: {totals.paymentPending.toFixed(2)}</p>
+          </Totals>
+        )}
+
         <ButtonContainer>
-          <SubmitButton type="submit">Submit</SubmitButton>
-          <CancelButton type="button" onClick={() => {
-            setVipName('');
-            setVipId('');
-            setFirstBusiness('');
-          }}>Cancel</CancelButton>
+          <Button onClick={checkIfRecordExists}>Submit</Button>
         </ButtonContainer>
-      </FormContainer>
-    </PageContainer>
+
+        {showConfirm && (
+          <Confirmation>
+            <p>Record already exists. Do you want to replace it?</p>
+            <ButtonConfirm onClick={handleReplaceRecord}>Yes</ButtonConfirm>
+            <ButtonCancel onClick={() => setShowConfirm(false)}>No</ButtonCancel>
+          </Confirmation>
+        )}
+      </Form>
+
+      {message && <Message>{message}</Message>}
+    </Container>
   );
 };
 
-export default AddVipForm;
+export default UploadVIP;
+
+// Styled Components
+const Container = styled.div`
+  max-width: 810px;
+  margin: 0 auto;
+  padding: 20px;
+  border:1px solid #000
+  border-radius: 8px;
+  color:#fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  margin-top:5%;
+`;
+
+const Heading = styled.h1`
+  font-size: 1.8em;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 20px;
+`;
+
+const Form = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+`;
+
+const Label = styled.label`
+  font-size: 1.1em;
+  color: #fff;
+`;
+
+const FileInput = styled.div``;
+
+const InputFile = styled.input`
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+`;
+
+const Dropdown = styled.div``;
+
+const Select = styled.select`
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  background-color: #fff;
+`;
+
+const Option = styled.option``;
+
+const Totals = styled.div`
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #e0ffe0;
+  border-radius: 5px;
+
+  p {
+    margin: 5px 0;
+  }
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+`;
+
+const Button = styled.button`
+  padding: 12px;
+  font-size: 1.1em;
+  background-color: #f00d88;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #45a049;
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+`;
+
+const Confirmation = styled.div`
+  padding: 20px;
+  background-color: #fff3cd;
+  border: 1px solid #ffecb3;
+  border-radius: 5px;
+  text-align: center;
+`;
+
+const ButtonConfirm = styled.button`
+  background-color: #ff5722;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  margin: 10px;
+  color: white;
+
+  &:hover {
+    background-color: #e64a19;
+  }
+`;
+
+const ButtonCancel = styled.button`
+  background-color: #ccc;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  margin: 10px;
+  color: white;
+
+  &:hover {
+    background-color: #999;
+  }
+`;
+
+const Message = styled.p`
+  margin-top: 20px;
+  color: #d9534f;
+  font-size: 1.1em;
+  text-align: center;
+`;
+

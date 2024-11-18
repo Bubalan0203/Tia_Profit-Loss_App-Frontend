@@ -163,17 +163,19 @@ export default UploadVIPFranchise;
 
 // Styled Components
 const Container = styled.div`
-  max-width: 800px;
+  max-width: 810px;
   margin: 0 auto;
   padding: 20px;
-  background-color: #f9f9f9;
+  border:1px solid #000
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  color:#fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  margin-top:5%;
 `;
 
 const Heading = styled.h1`
   font-size: 1.8em;
-  color: #333;
+  color: #fff;
   text-align: center;
   margin-bottom: 20px;
 `;
@@ -186,7 +188,7 @@ const Form = styled.div`
 
 const Label = styled.label`
   font-size: 1.1em;
-  color: #555;
+  color: #fff;
 `;
 
 const FileInput = styled.div``;
@@ -232,7 +234,7 @@ const ButtonContainer = styled.div`
 const Button = styled.button`
   padding: 12px;
   font-size: 1.1em;
-  background-color: #4caf50;
+  background-color: #f00d88;
   color: white;
   border: none;
   border-radius: 5px;

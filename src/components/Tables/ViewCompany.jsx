@@ -68,7 +68,7 @@ const HeaderText = styled.h2`
   margin-bottom: 20px;
 `;
 
-const ViewVip = () => {
+const ViewCompany = () => {
   const [data, setData] = useState([]); // State to store fetched data
   const [filteredData, setFilteredData] = useState([]); // State to store filtered data
   const [month, setMonth] = useState('All'); // Default month filter to 'All'
@@ -80,7 +80,7 @@ const ViewVip = () => {
     const fetchData = async () => {
       try {
         // Fetch data from the backend with the current month and year
-        const response = await fetch(`${URL}/vipdata/checkRecord?month=${month}&year=${year}`);
+        const response = await fetch(`${URL}/companydata/checkRecord?month=${month}&year=${year}`);
         const result = await response.json();
 
         // Ensure the response is an array
@@ -111,7 +111,7 @@ const ViewVip = () => {
 
   return (
     <TableContainer>
-      <HeaderText>View Vip</HeaderText>
+      <HeaderText>View Company Revenue</HeaderText>
       <FilterContainer>
         <FilterSelect value={month} onChange={(e) => setMonth(e.target.value)}>
           {[
@@ -160,8 +160,8 @@ const ViewVip = () => {
             filteredData.map((item, index) => (
               <TableRow key={index}>
                 <TableCell>{index + 1}</TableCell>
-                <TableCell>{item.totals.collection}</TableCell>
-                <TableCell>{item.totals.totalPayment}</TableCell>
+                <TableCell>{item.totals.courseFee}</TableCell>
+                <TableCell>{item.totals.companyRevenue}</TableCell>
                 <TableCell>{item.totals.paymentPaid}</TableCell>
                 <TableCell>{item.totals.paymentPending}</TableCell>
                 <TableCell>
@@ -187,4 +187,4 @@ const ViewVip = () => {
   );
 };
 
-export default ViewVip;
+export default ViewCompany;

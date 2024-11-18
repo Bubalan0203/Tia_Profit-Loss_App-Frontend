@@ -175,6 +175,7 @@ const ViewFsales = () => {
     axios.put(`${URL}/franchise/${salesData[currentFranchiseIndex].franchiseId}/products/${product._id}/pay`, {
       amount: payment
     })
+    
     .then(response => {
       const updatedSalesData = [...salesData];
       updatedSalesData[currentFranchiseIndex].products[currentProductIndex].paymentPaid = newPaymentPaid;
