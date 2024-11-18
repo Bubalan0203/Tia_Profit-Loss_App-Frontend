@@ -316,49 +316,131 @@ const Dashboard = () => {
       </DashboardHeadingContainer>
 
 
-
-      <StatsSection>
+      <h1>Vip Business Stats</h1>
+      <StatsSection>  
   <StatCard>
-    <StatLabel>Total Month Business</StatLabel>
+    <StatLabel>Total Collection</StatLabel>
     <StatValue>₹61999</StatValue>
   </StatCard>
   <StatCard>
-    <StatLabel>Total Month Business</StatLabel>
+    <StatLabel>Total Revenue</StatLabel>
     <StatValue>₹61999</StatValue>
   </StatCard>
   
   <StatCard>
-    <StatLabel>Total Month Business</StatLabel>
+    <StatLabel>Total Additional Revenue</StatLabel>
     <StatValue>₹61999</StatValue>
   </StatCard>
   <StatCard>
-    <StatLabel>Total Month Business</StatLabel>
+    <StatLabel>Total Total Payment</StatLabel>
     <StatValue>₹61999</StatValue>
   </StatCard>
   <StatCard>
-    <StatLabel>Total Month Business</StatLabel>
+    <StatLabel>Total Payment Paid</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total Payment Pending</StatLabel>
     <StatValue>₹61999</StatValue>
   </StatCard>
 </StatsSection>
 
 
+<h1>Vip Franchise Business Stats</h1>
+      <StatsSection>  
+  <StatCard>
+    <StatLabel>Total Collection</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total Revenue</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel> Total Payment</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total Payment Paid</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total Payment Pending</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+</StatsSection>
+
+<h1>Student Company Revenue Stats</h1>
+      <StatsSection>  
+  <StatCard>
+    <StatLabel>Total Course Fee</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total Company Revenue</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel> Total Amount Received</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total Amount Pending</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+</StatsSection>
+
+<h1>Franchise Sales Stats</h1>
+      <StatsSection>  
+  <StatCard>
+    <StatLabel>Total Sales</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total Payment Paid</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total Payment Pending</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+</StatsSection>
+
+<h1>Other  Stats</h1>
+      <StatsSection>  
+  <StatCard>
+    <StatLabel>Total  Other Sales</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total  Other Expense</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+</StatsSection>
+
+<h1>P & L Stats</h1>
+      <StatsSection>  
+  <StatCard>
+    <StatLabel>Total  Income</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total  Expense</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+</StatsSection>
+
       <GraphSection>
         <GraphItem>
-          <GraphTitle>Round Graph</GraphTitle>
+          <GraphTitle>P & L </GraphTitle>
           <ChartContainer>
             <Doughnut data={roundData} options={chartOptions} />
           </ChartContainer>
         </GraphItem>
         <GraphItem>
-          <GraphTitle>VIP & Non-VIP</GraphTitle>
+          <GraphTitle>Profit & Loss</GraphTitle>
           <ChartContainer>
             <Bar data={centerBarData} options={chartOptions} />
-          </ChartContainer>
-        </GraphItem>
-        <GraphItem>
-          <GraphTitle>VIP Franchise</GraphTitle>
-          <ChartContainer>
-            <Bar data={barData} options={chartOptions} />
           </ChartContainer>
         </GraphItem>
       </GraphSection>
