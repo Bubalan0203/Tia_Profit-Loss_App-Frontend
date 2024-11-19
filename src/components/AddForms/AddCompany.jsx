@@ -10,7 +10,7 @@ const UploadCompany = () => {
   const [year, setYear] = useState("");
   const [message, setMessage] = useState("");
   const [totals, setTotals] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false); // For confirmation dialog
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const months = [
     "January", "February", "March", "April", "May", 
@@ -18,6 +18,15 @@ const UploadCompany = () => {
     "October", "November", "December"
   ];
   const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
+
+  const resetForm = () => {
+    setFileData(null);
+    setMonth("");
+    setYear("");
+    setMessage("");
+    setTotals(null);
+    setShowConfirm(false);
+  };
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -47,7 +56,7 @@ const UploadCompany = () => {
   const calculateTotals = (data) => {
     return data.reduce(
       (acc, row) => {
-        acc.courseFee+= row.courseFee;
+        acc.courseFee += row.courseFee;
         acc.companyRevenue += row.companyRevenue;
         acc.paymentPaid += row.paymentPaid;
         acc.paymentPending += row.paymentPending;
@@ -63,13 +72,13 @@ const UploadCompany = () => {
         params: { month, year },
       });
 
-      if (response.data.exists) {
-        setShowConfirm(true); // Show the replace confirmation dialog
+      if (response.data && response.data.length > 0) {
+        setShowConfirm(true);
       } else {
         handleSubmit();
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || "An error occurred.");
+      setMessage(error.response?.data?.message || "An error occurred while checking the record.");
     }
   };
 
@@ -84,22 +93,23 @@ const UploadCompany = () => {
         month,
         year,
         totals,
-        replace, // Pass the flag for replacing the record
+        replace,
       });
-      setMessage(response.data.message);
+      setMessage(response.data.message || "Data uploaded successfully.");
+      resetForm(); // Reset form after successful submission
     } catch (error) {
-      setMessage(error.response?.data?.message || "An error occurred.");
+      setMessage(error.response?.data?.message || "An error occurred while uploading data.");
     }
   };
 
   const handleReplaceRecord = () => {
-    handleSubmit(true); // Call handleSubmit with replace set to true
-    setShowConfirm(false); // Close confirmation dialog
+    handleSubmit(true);
+    setShowConfirm(false);
   };
 
   return (
     <Container>
-      <Heading>Upload Company  </Heading>
+      <Heading>Upload Company</Heading>
 
       <Form>
         <FileInput>
@@ -143,6 +153,7 @@ const UploadCompany = () => {
 
         <ButtonContainer>
           <Button onClick={checkIfRecordExists}>Submit</Button>
+          <ButtonCancelC onClick={resetForm}>Cancel</ButtonCancelC> {/* Cancel Button */}
         </ButtonContainer>
 
         {showConfirm && (
@@ -160,6 +171,7 @@ const UploadCompany = () => {
 };
 
 export default UploadCompany;
+
 
 // Styled Components
 const Container = styled.div`
@@ -232,11 +244,12 @@ const ButtonContainer = styled.div`
 `;
 
 const Button = styled.button`
-  padding: 12px;
-  font-size: 1.1em;
+  padding:10px;
+  font-size:0.9em;
   background-color: #f00d88;
   color: white;
   border: none;
+   margin: 10px;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -250,7 +263,26 @@ const Button = styled.button`
     cursor: not-allowed;
   }
 `;
+const ButtonCancelC = styled.button`
+  padding:10px;
+  font-size:0.9em;
+  background-color: #f00d88;
+  color: white;
+  border: none;
+   margin: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 
+  &:hover {
+    background-color:Red;
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+`;
 const Confirmation = styled.div`
   padding: 20px;
   background-color: #fff3cd;
@@ -284,6 +316,7 @@ const ButtonCancel = styled.button`
     background-color: #999;
   }
 `;
+
 
 const Message = styled.p`
   margin-top: 20px;

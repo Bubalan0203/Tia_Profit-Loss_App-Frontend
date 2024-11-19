@@ -87,6 +87,7 @@ const UploadVIPFranchise = () => {
         replace, // Pass the flag for replacing the record
       });
       setMessage(response.data.message);
+      resetForm();
     } catch (error) {
       setMessage(error.response?.data?.message || "An error occurred.");
     }
@@ -95,6 +96,15 @@ const UploadVIPFranchise = () => {
   const handleReplaceRecord = () => {
     handleSubmit(true); // Call handleSubmit with replace set to true
     setShowConfirm(false); // Close confirmation dialog
+  };
+
+  const resetForm = () => {
+    setFileData(null);
+    setMonth("");
+    setYear("");
+    setMessage("");
+    setTotals(null);
+    setShowConfirm(false);
   };
 
   return (
@@ -143,6 +153,7 @@ const UploadVIPFranchise = () => {
 
         <ButtonContainer>
           <Button onClick={checkIfRecordExists}>Submit</Button>
+          <ButtonCancelC onClick={resetForm}>Cancel</ButtonCancelC>
         </ButtonContainer>
 
         {showConfirm && (
@@ -231,12 +242,14 @@ const ButtonContainer = styled.div`
   margin-top: 20px;
 `;
 
+
 const Button = styled.button`
-  padding: 12px;
-  font-size: 1.1em;
+  padding:10px;
+  font-size:0.9em;
   background-color: #f00d88;
   color: white;
   border: none;
+   margin: 10px;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -250,6 +263,27 @@ const Button = styled.button`
     cursor: not-allowed;
   }
 `;
+const ButtonCancelC = styled.button`
+  padding:10px;
+  font-size:0.9em;
+  background-color: #f00d88;
+  color: white;
+  border: none;
+   margin: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color:Red;
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+`;
+
 
 const Confirmation = styled.div`
   padding: 20px;

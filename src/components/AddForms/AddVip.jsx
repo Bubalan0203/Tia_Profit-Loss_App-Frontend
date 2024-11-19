@@ -63,13 +63,15 @@ const UploadVIP = () => {
         params: { month, year },
       });
 
-      if (response.data.exists) {
-        setShowConfirm(true); // Show the replace confirmation dialog
+      if (response.data && response.data.length > 0) {
+        setShowConfirm(true); // Show confirmation dialog
+        console.log("Record exists, showing confirmation dialog."); // Debugging
       } else {
         handleSubmit();
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || "An error occurred.");
+      setMessage(error.response?.data?.message || "An error occurred while checking the record.");
+      console.error("Error in checkIfRecordExists:", error);
     }
   };
 
@@ -87,6 +89,7 @@ const UploadVIP = () => {
         replace, // Pass the flag for replacing the record
       });
       setMessage(response.data.message);
+      resetForm();
     } catch (error) {
       setMessage(error.response?.data?.message || "An error occurred.");
     }
@@ -95,6 +98,15 @@ const UploadVIP = () => {
   const handleReplaceRecord = () => {
     handleSubmit(true); // Call handleSubmit with replace set to true
     setShowConfirm(false); // Close confirmation dialog
+  };
+
+  const resetForm = () => {
+    setFileData(null);
+    setMonth("");
+    setYear("");
+    setMessage("");
+    setTotals(null);
+    setShowConfirm(false);
   };
 
   return (
@@ -143,6 +155,7 @@ const UploadVIP = () => {
 
         <ButtonContainer>
           <Button onClick={checkIfRecordExists}>Submit</Button>
+          <ButtonCancelC onClick={resetForm}>Cancel</ButtonCancelC>
         </ButtonContainer>
 
         {showConfirm && (
@@ -232,17 +245,38 @@ const ButtonContainer = styled.div`
 `;
 
 const Button = styled.button`
-  padding: 12px;
-  font-size: 1.1em;
+  padding:10px;
+  font-size:0.9em;
   background-color: #f00d88;
   color: white;
   border: none;
+   margin: 10px;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 
   &:hover {
     background-color: #45a049;
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+`;
+const ButtonCancelC = styled.button`
+  padding:10px;
+  font-size:0.9em;
+  background-color: #f00d88;
+  color: white;
+  border: none;
+   margin: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color:Red;
   }
 
   &:disabled {
