@@ -96,6 +96,7 @@ const ViewFsales = () => {
   const [currentProductIndex, setCurrentProductIndex] = useState(null);
   const [monthFilter, setMonthFilter] = useState('');
   const [yearFilter, setYearFilter] = useState('');
+  const [expandedRoyaltyFranchise, setExpandedRoyaltyFranchise] = useState(null);
   const yearOptions = Array.from({ length: 11 }, (_, i) => 2020 + i); // Generates [2020, 2021, ..., 2030]
 
 
@@ -199,47 +200,97 @@ const ViewFsales = () => {
 
   return (
     <TableContainer>
-    {expandedFranchise === null ? (
-      <>
-        <HeaderText>Franchise Summary</HeaderText>
-        <StyledTable>
-          <thead>
-            <tr>
-              <TableHeader first>S no</TableHeader>
-              <TableHeader>Franchise Name</TableHeader>
-              <TableHeader>Total Sales</TableHeader>
-              <TableHeader>Total Payment Paid</TableHeader>
-              <TableHeader>Total Payment Pending</TableHeader>
-              <TableHeader last>View Sales</TableHeader>
-            </tr>
-          </thead>
-          <tbody>
-            {salesData.map((franchise, index) => {
-              const totalSales = calculateTotalSales(franchise.products);
-              const totalPaymentPaid = franchise.products.reduce((total, product) => total + (product.paymentPaid || 0), 0);
-              const totalPaymentPending = franchise.products.reduce((total, product) => total + (product.paymentPending || 0), 0);
-              return (
-                <TableRow key={franchise._id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{franchise.franchiseName}</TableCell>
-                  <TableCell>{totalSales > 0 ? `₹${totalSales}` : 'No Sales'}</TableCell>
-                  <TableCell>{`₹${totalPaymentPaid}`}</TableCell>
-                  <TableCell>{`₹${totalPaymentPending}`}</TableCell>
-                  <TableCell>
-                    <button 
-                      onClick={() => handleViewStatsClick(index)}
-                      disabled={totalSales === 0}
-                    >
-                      View Sales
-                    </button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </tbody>
-        </StyledTable>
-      </>
-    ) : (
+       {expandedRoyaltyFranchise !== null ? (
+          <>
+            <HeaderText>Royalty Details for {salesData[expandedRoyaltyFranchise]?.franchiseName}</HeaderText>
+            <button onClick={() => setExpandedRoyaltyFranchise(null)}>Back</button>
+            <StyledTable>
+              <thead>
+                <tr>
+                  <TableHeader first>S no</TableHeader>
+                  <TableHeader>Month</TableHeader>
+                  <TableHeader>Year</TableHeader>
+                  <TableHeader>Royalty Amount</TableHeader>
+                  <TableHeader>Amount Paid</TableHeader>
+                  <TableHeader>Amount Pending</TableHeader>
+                </tr>
+              </thead>
+              <tbody>
+                {salesData[expandedRoyaltyFranchise]?.financialRecords?.length > 0 ? (
+                  salesData[expandedRoyaltyFranchise]?.financialRecords?.map((record, recordIndex) => (
+                    <TableRow key={`${salesData[expandedRoyaltyFranchise]._id}-${recordIndex}`}>
+                      <TableCell>{recordIndex + 1}</TableCell>
+                      <TableCell>{record.month}</TableCell>
+                      <TableCell>{record.year}</TableCell>
+                      <TableCell>₹{record.royaltyAmount}</TableCell>
+                      <TableCell>₹{record.amountPaid}</TableCell>
+                      <TableCell>₹{record.amountPending}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} style={{ textAlign: 'center' }}>
+                      No Records Found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </tbody>
+            </StyledTable>
+          </>
+        ): expandedFranchise === null ? (
+        <>
+          <HeaderText>Franchise Summary</HeaderText>
+          <StyledTable>
+            <thead>
+              <tr>
+                <TableHeader first>S no</TableHeader>
+                <TableHeader>Franchise Name</TableHeader>
+                <TableHeader>Total Sales</TableHeader>
+                <TableHeader>Total Payment Paid</TableHeader>
+                <TableHeader>Total Payment Pending</TableHeader>
+                <TableHeader>View Sales</TableHeader>
+                <TableHeader last>View Royalty</TableHeader>
+              </tr>
+            </thead>
+            <tbody>
+              {salesData.map((franchise,index) => {
+                const totalSales = calculateTotalSales(franchise.products) +
+                (franchise.financialRecords?.reduce((sum, record) => sum + record.royaltyAmount, 0) || 0);
+
+                const totalPaymentPaid = franchise.products.reduce((total, product) => total + (product.paymentPaid || 0), 0) +
+                                      (franchise.financialRecords?.reduce((sum, record) => sum + record.amountPaid, 0) || 0);
+
+                const totalPaymentPending = totalSales - totalPaymentPaid + 
+                                          (franchise.financialRecords?.reduce((sum, record) => sum + record.amountPending, 0) || 0);
+
+                return (
+                  <TableRow key={franchise._id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{franchise.franchiseName}</TableCell>
+                    <TableCell>{`₹${totalSales}`}</TableCell>
+                    <TableCell>{`₹${totalPaymentPaid}`}</TableCell>
+                    <TableCell>{`₹${totalPaymentPending}`}</TableCell>
+                    <TableCell>
+                      <button 
+                        onClick={() => handleViewStatsClick(index)}
+                        disabled={totalSales === 0}
+                      >
+                        View Sales
+                      </button>
+                    </TableCell>
+                    <TableCell>
+                      <button onClick={() => setExpandedRoyaltyFranchise(index)}
+                      >
+                        View Royalty
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </tbody>
+          </StyledTable>
+        </>
+      ) : (
          <>
           <HeaderText>Sales for {salesData[expandedFranchise]?.franchiseName}</HeaderText>
           {expandedProductIndex === null ? (
