@@ -1,285 +1,122 @@
 import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
-import styled from 'styled-components';
 import axios from 'axios';
 import { URL } from '../../assests/mocData/config';
+import * as XLSX from 'xlsx';  // Import XLSX for reading Excel files
 
-const ExcelUploader = () => {
-  const [fileData, setFileData] = useState([]);
-  const [totals, setTotals] = useState(null);
-  const [fileName, setFileName] = useState('');
+const FinancialUploader = () => {
+  const [file, setFile] = useState(null);
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [tableData, setTableData] = useState([]); // Store data for the table
 
-  // Validate Excel columns
-  const validateExcelData = (data) => {
-    const requiredColumns = ["Collection", "Total Payment", "Payment Paid", "Payment Pending"];
-    const missingColumns = requiredColumns.filter(col => !data[0].hasOwnProperty(col));
-    return missingColumns.length === 0;
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    setFile(selectedFile);
+
+    // Read the Excel file
+    if (selectedFile) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const ab = e.target.result;
+        const workbook = XLSX.read(ab, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(sheet);
+
+        // Filter out the required columns
+        const filteredData = data.map((row) => ({
+          FranchiseID: row.FranchiseID,
+          RoyaltyAmount: row.RoyaltyAmount,
+          AmountPaid: row.AmountPaid,
+          AmountPending: row.AmountPending,
+        }));
+        
+        setTableData(filteredData); // Set the data for the table
+      };
+      reader.readAsArrayBuffer(selectedFile);
+    }
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    
-    if (!file) {
-      console.error('No file selected.');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!file || !month || !year) {
+      alert('Please fill all fields and select a file.');
       return;
     }
 
-    setFileName(file.name);
-    
-    const reader = new FileReader();
-    
-    reader.onload = (event) => {
-      try {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('month', month);
+    formData.append('year', year);
 
-        if (!validateExcelData(jsonData)) {
-          setMessage('The Excel file is missing required columns.');
-          return;
-        }
-
-        setFileData(jsonData);
-        calculateTotals(jsonData);
-      } catch (error) {
-        console.error('Error reading Excel file:', error);
-        setMessage('Error reading Excel file. Please ensure it is properly formatted.');
-      }
-    };
-
-    reader.readAsArrayBuffer(file);
-  };
-
-  const calculateTotals = (data) => {
-    const totalCollection = data.reduce((acc, row) => acc + (row["Collection"] || 0), 0);
-    const totalPayment = data.reduce((acc, row) => acc + (row["Total Payment"] || 0), 0);
-    const paymentPaid = data.reduce((acc, row) => acc + (row["Payment Paid"] || 0), 0);
-    const paymentPending = data.reduce((acc, row) => acc + (row["Payment Pending"] || 0), 0);
-
-    setTotals({
-      totalCollection,
-      totalPayment,
-      paymentPaid,
-      paymentPending,
-    });
-  };
-
-  const handleSubmit = async () => {
-    if (!month || !year || !fileName) {
-      setMessage('Please complete all fields.');
-      console.error('Form submission failed: Incomplete fields.');
-      return;
-    }
-
-    setLoading(true);
-    setMessage('');
-    
     try {
-      const formData = new FormData();
-      const fileInput = document.getElementById('file-upload');
-      const file = fileInput.files[0];
-
-      if (!file) {
-        setMessage('No file selected.');
-        setLoading(false);
-        return;
-      }
-
-      formData.append('file', file);
-      formData.append('month', month);
-      formData.append('year', year);
-
-      const response = await axios.post(`${URL}/uploadvip/upload`, formData, {
+      const response = await axios.post(`${URL}/vip1/upload-financial-data`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      setMessage(response.data.message);
-      if (response.data.data) setTotals(response.data.data.totals);
+      alert(response.data.message);
     } catch (error) {
-      console.error('Error during file upload:', error);
-      setMessage('Error uploading file: ' + (error.response?.data?.message || 'Something went wrong!'));
-    } finally {
-      setLoading(false);
+      alert(error.response?.data?.error || 'Error occurred while uploading.');
     }
   };
 
   return (
-    <Container>
-      <Title>Upload an Excel File</Title>
+    <div>
+      <h2>Upload Financial Data</h2>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Month:</label>
+          <select value={month} onChange={(e) => setMonth(e.target.value)} required>
+            <option value="" disabled>Select Month</option>
+            {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+              .map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+        <div>
+          <label>Year:</label>
+          <input
+            type="number"
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            min="2000"
+            max="2099"
+            required
+          />
+        </div>
+        <div>
+          <label>File:</label>
+          <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} required />
+        </div>
+        <button type="submit">Upload</button>
+      </form>
 
-      <SelectContainer>
-        <Select onChange={(e) => setMonth(e.target.value)} value={month}>
-          <option value="">Select Month</option>
-          <option value="January">January</option>
-          <option value="February">February</option>
-          <option value="March">March</option>
-          <option value="April">April</option>
-          <option value="May">May</option>
-          <option value="June">June</option>
-          <option value="July">July</option>
-          <option value="August">August</option>
-          <option value="September">September</option>
-          <option value="October">October</option>
-          <option value="November">November</option>
-          <option value="December">December</option>
-        </Select>
-
-        <Select onChange={(e) => setYear(e.target.value)} value={year}>
-          <option value="">Select Year</option>
-          <option value="2023">2023</option>
-          <option value="2024">2024</option>
-          <option value="2025">2025</option>
-        </Select>
-      </SelectContainer>
-
-      <UploadArea>
-        <FileInput
-          type="file"
-          accept=".xlsx, .xls"
-          onChange={handleFileUpload}
-          id="file-upload"
-        />
-        <FileLabel htmlFor="file-upload">
-          {fileName ? `Selected File: ${fileName}` : 'Click to select an Excel file'}
-        </FileLabel>
-      </UploadArea>
-
-      {fileData.length > 0 && (
-        <PreviewTable>
-          <thead>
-            <tr>
-              <th>Collection</th>
-              <th>Total Payment</th>
-              <th>Payment Paid</th>
-              <th>Payment Pending</th>
-            </tr>
-          </thead>
-          <tbody>
-            {fileData.slice(0, 5).map((row, index) => (
-              <tr key={index}>
-                <td>{row["Collection"]}</td>
-                <td>{row["Total Payment"]}</td>
-                <td>{row["Payment Paid"]}</td>
-                <td>{row["Payment Pending"]}</td>
+      {/* Display table only if there is data */}
+      {tableData.length > 0 && (
+        <div>
+          <h3>Financial Data Preview</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Franchise ID</th>
+                <th>Royalty Amount</th>
+                <th>Amount Paid</th>
+                <th>Amount Pending</th>
               </tr>
-            ))}
-          </tbody>
-        </PreviewTable>
+            </thead>
+            <tbody>
+              {tableData.map((row, index) => (
+                <tr key={index}>
+                  <td>{row.FranchiseID}</td>
+                  <td>{row.RoyaltyAmount}</td>
+                  <td>{row.AmountPaid}</td>
+                  <td>{row.AmountPending}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-
-      {totals && (
-        <TotalsContainer>
-          <h3>Calculated Totals:</h3>
-          <p>Total Collection: {totals.totalCollection}</p>
-          <p>Total Payment: {totals.totalPayment}</p>
-          <p>Payment Paid: {totals.paymentPaid}</p>
-          <p>Payment Pending: {totals.paymentPending}</p>
-        </TotalsContainer>
-      )}
-
-      <div>
-        {loading ? (
-          <button disabled>Uploading...</button>
-        ) : (
-          <button onClick={handleSubmit}>Upload Data</button>
-        )}
-      </div>
-
-      {message && <div>{message}</div>}
-    </Container>
+    </div>
   );
 };
 
-export default ExcelUploader;
-
-const Container = styled.div`
-  max-width: 600px;
-  margin: 2rem auto;
-  padding: 2rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background-color: #f9f9f9;
-  font-family: Arial, sans-serif;
-`;
-
-const Title = styled.h2`
-  text-align: center;
-  font-size: 1.5rem;
-  color: #333;
-`;
-
-const UploadArea = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 1rem 0;
-`;
-
-const FileInput = styled.input`
-  display: none;
-`;
-const PreviewTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  margin: 20px 0;
-  font-size: 18px;
-  text-align: left;
-
-  th, td {
-    padding: 12px;
-    border: 1px solid #ddd;
-  }
-
-  th {
-    background-color: #f4f4f4;
-  }
-`;
-const FileLabel = styled.label`
-  background-color: #007bff;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-  text-align: center;
-  transition: background-color 0.3s ease;
-  &:hover {
-    background-color: #0056b3;
-  }
-`;
-
-const SelectContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin: 1rem 0;
-`;
-
-const Select = styled.select`
-  padding: 0.5rem;
-  font-size: 1rem;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-`;
-
-const Result = styled.div`
-  text-align: center;
-  margin: 1rem 0;
-  font-size: 1.25rem;
-  color: #333;
-`;
-
-const TotalsContainer = styled.div`
-  margin-top: 1rem;
-  font-size: 1.2rem;
-  text-align: left;
-  color: #333;
-`;
-
-
+export default FinancialUploader;

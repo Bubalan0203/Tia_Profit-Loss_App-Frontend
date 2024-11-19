@@ -5,6 +5,7 @@ import { Box, Tabs, Tab,CircularProgress } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import AddFsales from "./AddForms/AddFsales";
 import ViewFsales from "./Tables/ViewFsales";
+import AddRoyalty from "./AddForms/AddRoyalty"
 
 
 
@@ -76,6 +77,7 @@ function FranchiseSalesTable({ user, courseListTitles }) {
           >
             <Tab label="View Franchise Sales" value="ViewFsalesList" />
             <Tab label="Add Franchise Sales" value="AddFsalesList" />
+            <Tab label="Add Royalty" value="AddRoyaltyList" />
           </Tabs>
         </Box>
 
@@ -84,6 +86,7 @@ function FranchiseSalesTable({ user, courseListTitles }) {
             <ViewFsales filterData={filterData} />
           )}
           {selectedView === "AddFsalesList" && <AddFsales />}
+          {selectedView === "AddRoyaltyList" && <AddRoyalty />}
         </div>
       </div>
     </SalesTableContainer>
