@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
-
+import {Button} from '@mui/material';
 const TableContainer = styled.div`
   padding: 20px;
   border-radius: 10px;
@@ -79,7 +79,19 @@ const ViewHo = () => {
     setViewSalary(false);
     setSelectedHo(null);
   };
-
+  const handleDelete = async (hoId) => {
+    if (window.confirm('Are you sure you want to delete this HO staff record?')) {
+      try {
+        await axios.delete(`${URL}/hostaff/${hoId}`);
+        setHoData((prevData) => prevData.filter((ho) => ho.hoId !== hoId));
+        alert('HO staff record deleted successfully');
+      } catch (error) {
+        console.error('Error deleting HO staff record:', error);
+        alert('Failed to delete HO staff record');
+      }
+    }
+  };
+  
   return (
     <TableContainer>
       {!viewSalary ? (
@@ -105,7 +117,17 @@ const ViewHo = () => {
                     <button onClick={() => handleViewSalary(ho)}
                        disabled={!ho.salary || ho.salary.length === 0}>View Salary</button>
                   </TableCell>
-                  <TableCell>Delete</TableCell>
+                  <TableCell align="center">
+  <Button
+    variant="contained"
+    color="error"
+    style={{ textTransform: 'none' }}
+    onClick={() => handleDelete(ho.hoId)}
+  >
+    Delete
+  </Button>
+</TableCell>
+
                 </TableRow>
               ))}
             </tbody>
