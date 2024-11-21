@@ -24,6 +24,10 @@ const Dashboard = () => {
   const [totalSales, setTotalSales] = useState(0);
   const [totalPaymentPaid, setTotalPaymentPaid] = useState(0);
   const [totalPaymentPending, setTotalPaymentPending] = useState(0);
+  const [totalSale, setTotalSale] = useState(0);
+  const [totalExpense, setTotalExpense] = useState(0);
+  const [saleData, setSaleData] = useState([]);
+  const [expenseData, setExpenseData] = useState([]);
   const [month, setMonth] = useState("All");
   const [year, setYear] = useState("All");
   const [data, setData] = useState(null);
@@ -281,6 +285,83 @@ const Dashboard = () => {
   };
 
 
+  useEffect(() => {
+    const fetchSaleData = async () => {
+        try {
+            const response = await fetch(`${URL}/sales`);
+            const data = await response.json();
+            setSaleData(data);
+        } catch (error) {
+            console.error('Error fetching sales data:', error);
+        }
+    };
+
+    fetchSaleData();
+}, []);
+
+// Fetch expenses data
+useEffect(() => {
+    const fetchExpenseData = async () => {
+        try {
+            const response = await fetch(`${URL}/fsales`);
+            const data = await response.json();
+            setExpenseData(data);
+        } catch (error) {
+            console.error('Error fetching expenses data:', error);
+        }
+    };
+
+    fetchExpenseData();
+}, []);
+
+useEffect(() => {
+  const filterAndCalculateTotals = () => {
+      let filteredSales = [...saleData];
+      let filteredExpenses = [...expenseData];
+
+      // Handle month filtering
+      if (month !== "All") {
+        const monthNames = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+        
+        // Find the month index (0-11) to compare against the createdAt month index
+        const monthIndex = monthNames.indexOf(month);
+        filteredSales = filteredSales.filter((sale) => {
+            const saleMonth = new Date(sale.createdAt).getMonth(); // Returns a 0-based month index
+            return saleMonth === monthIndex;
+        });
+
+        filteredExpenses = filteredExpenses.filter((expense) => {
+            const expenseMonth = new Date(expense.createdAt).getMonth(); // Returns a 0-based month index
+            return expenseMonth === monthIndex;
+        });
+    }
+
+      // Handle year filtering
+      if (year !== "All") {
+          filteredSales = filteredSales.filter((sale) => {
+              const saleYear = new Date(sale.createdAt).getFullYear();
+              return saleYear === parseInt(year);
+          });
+
+          filteredExpenses = filteredExpenses.filter((expense) => {
+              const expenseYear = new Date(expense.createdAt).getFullYear();
+              return expenseYear === parseInt(year);
+          });
+      }
+
+      // Sum the total sales and expenses
+      const totalSale = filteredSales.reduce((total, sale) => total + parseFloat(sale.total), 0);
+      const totalExpense = filteredExpenses.reduce((total, expense) => total + parseFloat(expense.total), 0);
+
+      setTotalSale(totalSale);
+      setTotalExpense(totalExpense);
+  };
+
+  filterAndCalculateTotals();
+}, [saleData, expenseData, month, year]);
 
   const handleMonthChange = (e) => {
     setMonth(e.target.value);
@@ -381,11 +462,11 @@ const Dashboard = () => {
       <StatsSection>  
   <StatCard>
     <StatLabel>Total  Other Sales</StatLabel>
-    <StatValue>₹61999</StatValue>
+    <StatValue> ₹{totalSale}</StatValue>
   </StatCard>
   <StatCard>
     <StatLabel>Total  Other Expense</StatLabel>
-    <StatValue>₹61999</StatValue>
+    <StatValue> ₹{totalExpense}</StatValue>
   </StatCard>
 </StatsSection>
 
