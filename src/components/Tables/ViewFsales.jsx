@@ -260,8 +260,7 @@ const ViewFsales = () => {
                 const totalPaymentPaid = franchise.products.reduce((total, product) => total + (product.paymentPaid || 0), 0) +
                                       (franchise.financialRecords?.reduce((sum, record) => sum + record.amountPaid, 0) || 0);
 
-                const totalPaymentPending = totalSales - totalPaymentPaid + 
-                                          (franchise.financialRecords?.reduce((sum, record) => sum + record.amountPending, 0) || 0);
+                const totalPaymentPending = totalSales - totalPaymentPaid ;
 
                 return (
                   <TableRow key={franchise._id}>
