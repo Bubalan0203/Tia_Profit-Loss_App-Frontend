@@ -173,6 +173,7 @@ const ViewCompany = () => {
         <thead>
           <tr>
             <TableHeader first>S no</TableHeader>
+            <TableHeader>Month & Year</TableHeader>
             <TableHeader>Collection</TableHeader>
             <TableHeader>Total payment</TableHeader>
             <TableHeader>Payment Paid</TableHeader>
@@ -185,6 +186,7 @@ const ViewCompany = () => {
             filteredData.map((item, index) => (
               <TableRow key={index}>
                 <TableCell>{index + 1}</TableCell>
+                <TableCell>{item.monthYear}</TableCell>
                 <TableCell>{item.totals.courseFee}</TableCell>
                 <TableCell>{item.totals.companyRevenue}</TableCell>
                 <TableCell>{item.totals.paymentPaid}</TableCell>

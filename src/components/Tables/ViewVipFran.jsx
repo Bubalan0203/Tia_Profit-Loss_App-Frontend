@@ -176,6 +176,7 @@ const ViewVip = () => {
         <thead>
           <tr>
             <TableHeader first>S no</TableHeader>
+            <TableHeader>Month & Year</TableHeader>
             <TableHeader>Collection</TableHeader>
             <TableHeader>Total payment</TableHeader>
             <TableHeader>Payment Paid</TableHeader>
@@ -188,6 +189,7 @@ const ViewVip = () => {
             filteredData.map((item, index) => (
               <TableRow key={index}>
                 <TableCell>{index + 1}</TableCell>
+                <TableCell>{item.monthYear}</TableCell>
                 <TableCell>{item.totals.collection}</TableCell>
                 <TableCell>{item.totals.totalPayment}</TableCell>
                 <TableCell>{item.totals.paymentPaid}</TableCell>
