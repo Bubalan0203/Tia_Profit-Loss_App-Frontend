@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import NavBar from './Navbar';
 import axios from 'axios';
 import { URL } from '../assests/mocData/config';
+import { useSnackbar } from 'notistack';
 
 const Container = styled(Box)({
   display: 'flex',
@@ -123,6 +124,7 @@ const TableCell = styled.td`
 const Product = () => {
   const [productName, setProductName] = useState('');
   const [products, setProducts] = useState([]);
+  const { enqueueSnackbar } = useSnackbar();
 
   // Fetch products on component mount
   useEffect(() => {
@@ -131,7 +133,7 @@ const Product = () => {
         setProducts(response.data);
       })
       .catch(error => {
-        console.error('Error fetching products:', error);
+        enqueueSnackbar('Error fetching products', { variant: 'error' });
       });
   }, []);
 
@@ -142,13 +144,35 @@ const Product = () => {
     // Create a new product
     axios.post(`${URL}/product`, { productName })
       .then(response => {
-        setProducts([...products, response.data]);  // Add new product to the state
-        setProductName('');  // Reset the form
+        setProducts([...products, response.data]); // Add new product to the state
+        setProductName(''); // Reset the form
+        enqueueSnackbar('Product added successfully', { variant: 'success' });
       })
       .catch(error => {
-        console.error('Error adding product:', error);
+        if (error.response && error.response.status === 409) {
+          // Conflict status for already existing product
+          enqueueSnackbar('Product already exists', { variant: 'error' });
+        } else {
+          enqueueSnackbar('Error adding product', { variant: 'error' });
+        }
       });
   };
+
+
+  const handleDelete = (productName) => {
+    if (window.confirm(`Are you sure you want to delete the product "${productName}"?`)) {
+      axios
+        .delete(`${URL}/product/name/${encodeURIComponent(productName)}`)
+        .then(() => {
+          setProducts(products.filter((product) => product.productName !== productName)); // Remove the deleted product from the state
+        })
+        .catch((error) => {
+          console.error('Error deleting product:', error);
+        });
+    }
+  };
+  
+  
 
   return (
     <Container>
@@ -186,7 +210,16 @@ const Product = () => {
                 <TableRow key={product._id}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{product.productName}</TableCell>
-                  <TableCell>Edit | Delete</TableCell>
+                  <TableCell>
+    <Button
+       onClick={() => handleDelete(product.productName)}
+       variant="contained"
+    color="error"
+    style={{ textTransform: 'none' }}
+    >
+      Delete
+    </Button>
+  </TableCell>
                 </TableRow>
               ))}
             </tbody>

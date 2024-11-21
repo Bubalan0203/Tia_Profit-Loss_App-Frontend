@@ -60,7 +60,7 @@ const TableRow = styled.tr`
 
 const TableCell = styled.td`
   padding: 15px;
-  text-align: left;
+  text-align: left; 
   border-top: 1px solid #555;
 `;
 

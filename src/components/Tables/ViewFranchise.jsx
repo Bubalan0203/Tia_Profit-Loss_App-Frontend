@@ -214,11 +214,7 @@ const ViewFranchise = () => {
    style={{ textTransform: 'none' }}
    onClick={() => handleDelete(franchise.franchiseId)}>
     Delete</Button>
-  <Button
-  variant="contained"
-  color="success"
-  style={{ textTransform: 'none' }}>
-    Edit</Button> {/* Placeholder for the edit functionality */}
+  
 </TableCell>
 
               </TableRow>
