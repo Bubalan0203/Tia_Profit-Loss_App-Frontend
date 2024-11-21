@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { URL } from "../assests/mocData/config";
 import Navbar from "./Navbar"
 import { Doughnut, Bar } from "react-chartjs-2";
+import axios from "axios";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -19,6 +20,10 @@ ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tool
 
 // Main Dashboard Component
 const Dashboard = () => {
+  const [salesData, setSalesData] = useState([]);
+  const [totalSales, setTotalSales] = useState(0);
+  const [totalPaymentPaid, setTotalPaymentPaid] = useState(0);
+  const [totalPaymentPending, setTotalPaymentPending] = useState(0);
   const [month, setMonth] = useState("All");
   const [year, setYear] = useState("All");
   const [data, setData] = useState(null);
@@ -206,7 +211,77 @@ const Dashboard = () => {
     fetchFranchiseData();
     fetchCompanyData(); // Ensure this call is present
   }, [month, year]);
-  
+  useEffect(() => {
+    fetchSalesData();
+  }, []);
+
+  useEffect(() => {
+    calculateTotals();
+  }, [salesData, month, year]);
+
+  const fetchSalesData = () => {
+    axios
+      .get(`${URL}/franchise`)
+      .then((response) => {
+        setSalesData(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching sales data:", error);
+      });
+  };
+
+  const calculateTotals = () => {
+    let filteredData = salesData;
+
+    if (month !== "All" || year !== "All") {
+      filteredData = salesData.map((franchise) => {
+        const filteredProducts = franchise.products.filter((product) => {
+          const productDate = new Date(product.addedDate);
+          const productMonth = productDate.toLocaleString("default", { month: "long" });
+          const productYear = productDate.getFullYear().toString();
+
+          const matchesMonth = month === "All" || productMonth === month;
+          const matchesYear = year === "All" || productYear === year;
+
+          return matchesMonth && matchesYear;
+        });
+
+        const filteredRecords = franchise.financialRecords?.filter((record) => {
+          const matchesMonth = month === "All" || record.month === month;
+          const matchesYear = year === "All" || record.year.toString() === year;
+
+          return matchesMonth && matchesYear;
+        });
+
+        return {
+          ...franchise,
+          products: filteredProducts,
+          financialRecords: filteredRecords,
+        };
+      });
+    }
+
+    const totalSales = filteredData.reduce((total, franchise) => {
+      const productSales = franchise.products.reduce((sum, product) => sum + parseFloat(product.total), 0);
+      const recordSales = franchise.financialRecords?.reduce((sum, record) => sum + record.royaltyAmount, 0) || 0;
+      return total + productSales + recordSales;
+    }, 0);
+
+    const totalPaid = filteredData.reduce((total, franchise) => {
+      const productPaid = franchise.products.reduce((sum, product) => sum + (product.paymentPaid || 0), 0);
+      const recordPaid = franchise.financialRecords?.reduce((sum, record) => sum + record.amountPaid, 0) || 0;
+      return total + productPaid + recordPaid;
+    }, 0);
+
+    const totalPending = totalSales - totalPaid;
+
+    setTotalSales(totalSales);
+    setTotalPaymentPaid(totalPaid);
+    setTotalPaymentPending(totalPending);
+  };
+
+
+
   const handleMonthChange = (e) => {
     setMonth(e.target.value);
   };
@@ -287,20 +362,20 @@ const Dashboard = () => {
 
 
 <h1>Franchise Sales Stats</h1>
-      <StatsSection>  
-  <StatCard>
-    <StatLabel>Total Sales</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Payment Paid</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Payment Pending</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-</StatsSection>
+      <StatsSection>
+        <StatCard>
+          <StatLabel>Total Sales</StatLabel>
+          <StatValue>₹{totalSales.toLocaleString()}</StatValue>
+        </StatCard>
+        <StatCard>
+          <StatLabel>Total Payment Paid</StatLabel>
+          <StatValue>₹{totalPaymentPaid.toLocaleString()}</StatValue>
+        </StatCard>
+        <StatCard>
+          <StatLabel>Total Payment Pending</StatLabel>
+          <StatValue>₹{totalPaymentPending.toLocaleString()}</StatValue>
+        </StatCard>
+      </StatsSection>
 
 <h1>Other  Stats</h1>
       <StatsSection>  
