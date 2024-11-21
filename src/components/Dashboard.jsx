@@ -28,6 +28,8 @@ const Dashboard = () => {
   const [totalExpense, setTotalExpense] = useState(0);
   const [saleData, setSaleData] = useState([]);
   const [expenseData, setExpenseData] = useState([]);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
   const [month, setMonth] = useState("All");
   const [year, setYear] = useState("All");
   const [data, setData] = useState(null);
@@ -363,6 +365,62 @@ useEffect(() => {
   filterAndCalculateTotals();
 }, [saleData, expenseData, month, year]);
 
+useEffect(() => {
+  const mapDataToStats = () => {
+    const companyBusiness = {
+      paymentPaid: CompanyDataTotals.paymentPaid,
+    };
+
+    const franchiseSales = {
+      totalPaymentPaid: totalPaymentPaid, // Already calculated in `calculateTotals`
+    };
+
+    const vipBusiness = {
+      paymentPaid: totals.paymentPaid,
+    };
+
+    const vipFranchiseBusiness = {
+      paymentPaid: vipFranchiseTotals.paymentPaid,
+    };
+
+    const otherStats = {
+      totalSales: totalSale, // Already calculated
+      totalExpense: totalExpense, // Already calculated
+    };
+
+    return {
+      companyBusiness,
+      franchiseSales,
+      vipBusiness,
+      vipFranchiseBusiness,
+      otherStats,
+    };
+  };
+
+  const stats = mapDataToStats();
+
+  // Calculate Total Income and Expenses
+  const income =
+    (stats.companyBusiness.paymentPaid || 0) +
+    (stats.franchiseSales.totalPaymentPaid || 0) +
+    (stats.otherStats.totalSales || 0);
+
+  const expenses =
+    (stats.vipBusiness.paymentPaid || 0) +
+    (stats.vipFranchiseBusiness.paymentPaid || 0) +
+    (stats.otherStats.totalExpense || 0);
+console.log(stats.vipBusiness.paymentPaid,stats.vipFranchiseBusiness.paymentPaid,stats.otherStats.totalExpense )
+  setTotalIncome(income);
+  setTotalExpenses(expenses);
+}, [
+  CompanyDataTotals,
+  vipFranchiseTotals,
+  totalSale,
+  totalExpense,
+  totalPaymentPaid,
+]);
+
+
   const handleMonthChange = (e) => {
     setMonth(e.target.value);
   };
@@ -378,7 +436,7 @@ useEffect(() => {
   return (
     <DashboardContainer>
       <DashboardHeadingContainer>
-        <DashboardHeading>Dashboard</DashboardHeading>
+        <DashboardHeading1>Dashboard</DashboardHeading1>
 
        {/* Filters */}
        {/* Year and Month Filter */}
@@ -410,7 +468,7 @@ useEffect(() => {
         </FilterContainer>
       </DashboardHeadingContainer>
 
-      <h1>VIP Business Stats</h1>
+      <DashboardHeading>VIP Business Stats</DashboardHeading>
 <StatsSection>
   {Object.entries(totals).map(([key, value]) => (
     <StatCard key={key}>
@@ -420,7 +478,7 @@ useEffect(() => {
   ))}
 </StatsSection>
 
-<h1>VIP Franchise Business Stats</h1>
+<DashboardHeading>VIP Franchise Business Stats</DashboardHeading>
 <StatsSection>
   {Object.entries(vipFranchiseTotals).map(([key, value]) => (
     <StatCard key={key}>
@@ -430,7 +488,7 @@ useEffect(() => {
   ))}
 </StatsSection>
 
-<h1>Company Business Stats</h1>
+<DashboardHeading>Company Business Stats</DashboardHeading>
 <StatsSection>
   {Object.entries(CompanyDataTotals).map(([key, value]) => (
     <StatCard key={key}>
@@ -442,7 +500,7 @@ useEffect(() => {
 
 
 
-<h1>Franchise Sales Stats</h1>
+<DashboardHeading>Franchise Sales Stats</DashboardHeading>
       <StatsSection>
         <StatCard>
           <StatLabel>Total Sales</StatLabel>
@@ -458,7 +516,7 @@ useEffect(() => {
         </StatCard>
       </StatsSection>
 
-<h1>Other  Stats</h1>
+  <DashboardHeading>Other  Stats</DashboardHeading>
       <StatsSection>  
   <StatCard>
     <StatLabel>Total  Other Sales</StatLabel>
@@ -470,15 +528,15 @@ useEffect(() => {
   </StatCard>
 </StatsSection>
 
-<h1>P & L Stats</h1>
-      <StatsSection>  
+<DashboardHeading>P & L Stats</DashboardHeading>
+  <StatsSection>  
   <StatCard>
     <StatLabel>Total  Income</StatLabel>
-    <StatValue>₹61999</StatValue>
+    <StatValue>₹{totalIncome}</StatValue>
   </StatCard>
   <StatCard>
     <StatLabel>Total  Expense</StatLabel>
-    <StatValue>₹61999</StatValue>
+    <StatValue>₹{totalExpenses}</StatValue>
   </StatCard>
 </StatsSection>
 
@@ -486,8 +544,29 @@ useEffect(() => {
         <GraphItem>
           <GraphTitle>P & L </GraphTitle>
           <ChartContainer>
-            <Doughnut data={roundData} options={chartOptions} />
-          </ChartContainer>
+  <Doughnut
+    data={{
+      labels: ["Total Income", "Total Expenses"],
+      datasets: [
+        {
+          data: [totalIncome, totalExpenses], // Use dynamic data
+          backgroundColor: ["green", "red"], // Colors for each segment
+          hoverBackgroundColor: [ "#81C784","#E57373"], // Colors on hover
+        },
+      ],
+    }}
+    options={{
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "top", // Adjust the legend position
+        },
+      },
+    }}
+  />
+</ChartContainer>
+
         </GraphItem>
         <GraphItem>
           <GraphTitle>Profit & Loss</GraphTitle>
@@ -505,17 +584,7 @@ useEffect(() => {
 export default Dashboard;
 
 
-  // Example data for the Doughnut (Round) chart
-  const roundData = {
-    labels: ["Red", "Yellow"],
-    datasets: [
-      {
-        data: [300, 100],
-        backgroundColor: ["#FF6384", "#36A2EB"],
-        hoverBackgroundColor: ["#FF6384", "#36A2EB"],
-      },
-    ],
-  };
+ 
 
   // Example data for the Bar charts
   const barData = {
@@ -545,13 +614,13 @@ export default Dashboard;
       },
     ],
   };
-// Styled Components for Dashboard
+
 const DashboardContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
   padding: 1rem;
-  background-color: #1E1E1E;
+  background-color:#2b2a2f;
 `;
 
 const DashboardHeadingContainer = styled.div`
@@ -565,12 +634,15 @@ const DashboardHeadingContainer = styled.div`
     gap: 1rem;
   }
 `;
-
-const DashboardHeading = styled.h1`
+const DashboardHeading1 = styled.h1`
   font-size: 2.5rem;
   color: #fff;
   margin: 0;
-  text-align: center;
+`;
+const DashboardHeading = styled.h1`
+  font-size: 1.5rem;
+  color: #fff;
+  margin: 0;
 `;
 
 const FilterContainer = styled.div`
@@ -620,7 +692,7 @@ const StatCard = styled.div`
   &::after {
     content: "₹";
     font-size: 6rem; /* Adjust as needed */
-    color: rgba(255, 255, 255, 0.3); /* Lightly transparent */
+    color: rgba(255, 255, 255, 0.5); /* Lightly transparent */
     position: absolute;
         right: 2%;
   }
@@ -642,24 +714,6 @@ const StatValue = styled.div`
   color: #fff;
 `;
 
-
-
-const StatBoard = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-bottom: 2rem;
-  padding: 1rem;
-`;
-
-const StatBoardItem = styled.div`
-  text-align: center;
-  padding: 0.75rem;
-  font-size: 1.2rem;
-  color: #fff;
-  background-color: #2D2D2D;
-  border-radius: 10px;
-  font-weight: bold;
-`;
 
 const GraphSection = styled.div`
   display: grid;
@@ -744,7 +798,7 @@ const chartOptions = {
 };
 
 const BackButton = styled.button`
-  background-color: #FF6347;
+  background-color: #f00d88;
   color: white;
   font-size: 1rem;
   padding: 0.8rem 1.2rem;
@@ -757,7 +811,7 @@ const BackButton = styled.button`
   margin: 20px auto 0;
 
   &:hover {
-    background-color: #FF4500;
+    background-color: #444;
   }
 
   &:focus {
