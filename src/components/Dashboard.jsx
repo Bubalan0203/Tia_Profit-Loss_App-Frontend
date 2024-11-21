@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import { URL } from "../assests/mocData/config";
 import Navbar from "./Navbar"
 import { Doughnut, Bar } from "react-chartjs-2";
 import {
@@ -16,6 +17,378 @@ import {
 // Register necessary components for Chart.js
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+// Main Dashboard Component
+const Dashboard = () => {
+  const [month, setMonth] = useState("All");
+  const [year, setYear] = useState("All");
+  const [data, setData] = useState(null);
+  const [totals, setTotals] = useState({
+    collection: 0,
+    totalPayment: 0,
+    paymentPaid: 0,
+    paymentPending: 0,
+  });
+  const [error, setError] = useState("");
+  const [vipFranchiseData, setVipFranchiseData] = useState([]); // Data for VIP Franchise
+  const [vipFranchiseTotals, setVipFranchiseTotals] = useState({
+    collection: 0,
+    totalPayment: 0,
+    paymentPaid: 0,
+    paymentPending: 0,
+  });
+  const fetchFranchiseData = async () => {
+    try {
+      const response = await fetch(
+        `${URL}/vipfranchiseupload/checkRecord?month=${month}&year=${year}`
+      );
+      const result = await response.json();
+  
+      if (response.ok && result.records) {
+        setVipFranchiseData(result.records);
+  
+        // Calculate totals
+        const calculatedTotals = result.records.reduce(
+          (acc, record) => {
+            acc.collection += record.totals.collection;
+            acc.totalPayment += record.totals.totalPayment;
+            acc.paymentPaid += record.totals.paymentPaid;
+            acc.paymentPending += record.totals.paymentPending;
+            return acc;
+          },
+          {
+            collection: 0,
+            totalPayment: 0,
+            paymentPaid: 0,
+            paymentPending: 0,
+          }
+        );
+        setVipFranchiseTotals(calculatedTotals);
+      } else {
+        setVipFranchiseData([]);
+        setVipFranchiseTotals({
+          collection: 0,
+          totalPayment: 0,
+          paymentPaid: 0,
+          paymentPending: 0,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching VIP Franchise data:", err);
+      setVipFranchiseData([]);
+      setVipFranchiseTotals({
+        collection: 0,
+        totalPayment: 0,
+        paymentPaid: 0,
+        paymentPending: 0,
+      });
+    }
+  };
+  
+  const fetchData = async () => {
+    try {
+      const response = await fetch(
+        `${URL}/vipdata/checkRecord?month=${month}&year=${year}`
+      );
+      const contentType = response.headers.get("content-type");
+
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Invalid response format (not JSON)");
+      }
+
+      const result = await response.json();
+      if (response.ok) {
+        setData(result);
+
+        // Calculate totals
+        const calculatedTotals = result.reduce(
+          (acc, record) => {
+            acc.collection += record.totals.collection;
+            acc.totalPayment += record.totals.totalPayment;
+            acc.paymentPaid += record.totals.paymentPaid;
+            acc.paymentPending += record.totals.paymentPending;
+            return acc;
+          },
+          {
+            collection: 0,
+            totalPayment: 0,
+            paymentPaid: 0,
+            paymentPending: 0,
+          }
+        );
+        setTotals(calculatedTotals);
+      } else {
+        setError(result.message || "Failed to fetch data");
+        setData([]);
+        setTotals({
+          collection: 0,
+          totalPayment: 0,
+          paymentPaid: 0,
+          paymentPending: 0,
+        });
+      }
+    } catch (err) {
+      setError("Failed to load data. Please try again.");
+      console.error("Error fetching stats:", err);
+      setData([]);
+      setTotals({
+        collection: 0,
+        totalPayment: 0,
+        paymentPaid: 0,
+        paymentPending: 0,
+      });
+    }
+  };
+
+  const [CompanyData, setCompanyData] = useState([]); // Data for VIP Franchise
+  const [CompanyDataTotals, setCompanyDataTotals] = useState({
+    collection: 0,
+    totalPayment: 0,
+    paymentPaid: 0,
+    paymentPending: 0,
+  });
+
+  const fetchCompanyData = async () => {
+    try {
+      const response = await fetch(
+        `${URL}/companydata/checkRecord?month=${month}&year=${year}`
+      );
+      const result = await response.json();
+  
+      if (response.ok && Array.isArray(result)) {
+        setCompanyData(result); // Correctly update CompanyData
+  
+        // Calculate totals for company revenue
+        const calculatedTotals = result.reduce(
+          (acc, record) => {
+            // Ensure you're accessing the correct fields within each record
+            acc.collection += record.totals.courseFee || 0;  // Corrected the field name here
+            acc.totalPayment += record.totals.companyRevenue || 0; // Correct field
+            acc.paymentPaid += record.totals.paymentPaid || 0;
+            acc.paymentPending += record.totals.paymentPending || 0;
+            return acc;
+          },
+          {
+            collection: 0,
+            totalPayment: 0,
+            paymentPaid: 0,
+            paymentPending: 0,
+          }
+        );
+  
+        setCompanyDataTotals(calculatedTotals); // Correctly update CompanyDataTotals
+      } else {
+        setCompanyData([]); // Reset company data if response is not an array
+        setCompanyDataTotals({
+          collection: 0,
+          totalPayment: 0,
+          paymentPaid: 0,
+          paymentPending: 0,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching company data:", err);
+      setCompanyData([]); // Reset company data on error
+      setCompanyDataTotals({
+        collection: 0,
+        totalPayment: 0,
+        paymentPaid: 0,
+        paymentPending: 0,
+      });
+    }
+  };
+  
+
+
+
+  useEffect(() => {
+    fetchData();
+    fetchFranchiseData();
+    fetchFranchiseData();
+    fetchCompanyData(); // Ensure this call is present
+  }, [month, year]);
+  
+  const handleMonthChange = (e) => {
+    setMonth(e.target.value);
+  };
+
+  const handleYearChange = (e) => {
+    setYear(e.target.value);
+  };
+
+  const handleBackClick = () => {
+    window.history.back();
+  };
+
+  return (
+    <DashboardContainer>
+      <DashboardHeadingContainer>
+        <DashboardHeading>Dashboard</DashboardHeading>
+
+       {/* Filters */}
+       {/* Year and Month Filter */}
+       <FilterContainer>
+          <FilterSelect value={month} onChange={handleMonthChange}>
+            <option value="All">All Months</option>
+            <option value="January">January</option>
+            <option value="February">February</option>
+            <option value="March">March</option>
+            <option value="April">April</option>
+            <option value="May">May</option>
+            <option value="June">June</option>
+            <option value="July">July</option>
+            <option value="August">August</option>
+            <option value="September">September</option>
+            <option value="October">October</option>
+            <option value="November">November</option>
+            <option value="December">December</option>
+          </FilterSelect>
+
+          <FilterSelect value={year} onChange={handleYearChange}>
+            <option value="All">All Years</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+            <option value="2022">2022</option>
+            <option value="2021">2021</option>
+            <option value="2020">2020</option>
+          </FilterSelect>
+        </FilterContainer>
+      </DashboardHeadingContainer>
+
+      <h1>VIP Business Stats</h1>
+<StatsSection>
+  {Object.entries(totals).map(([key, value]) => (
+    <StatCard key={key}>
+      <StatLabel>{key.replace(/([A-Z])/g, " $1")}</StatLabel>
+      <StatValue>₹{value}</StatValue>
+    </StatCard>
+  ))}
+</StatsSection>
+
+<h1>VIP Franchise Business Stats</h1>
+<StatsSection>
+  {Object.entries(vipFranchiseTotals).map(([key, value]) => (
+    <StatCard key={key}>
+      <StatLabel>{key.replace(/([A-Z])/g, " $1")}</StatLabel>
+      <StatValue>₹{value}</StatValue>
+    </StatCard>
+  ))}
+</StatsSection>
+
+<h1>Company Business Stats</h1>
+<StatsSection>
+  {Object.entries(CompanyDataTotals).map(([key, value]) => (
+    <StatCard key={key}>
+      <StatLabel>{key.replace(/([A-Z])/g, " $1")}</StatLabel>
+      <StatValue>₹{value.toLocaleString()}</StatValue> {/* Format numbers */}
+    </StatCard>
+  ))}
+</StatsSection>
+
+
+
+<h1>Franchise Sales Stats</h1>
+      <StatsSection>  
+  <StatCard>
+    <StatLabel>Total Sales</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total Payment Paid</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total Payment Pending</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+</StatsSection>
+
+<h1>Other  Stats</h1>
+      <StatsSection>  
+  <StatCard>
+    <StatLabel>Total  Other Sales</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total  Other Expense</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+</StatsSection>
+
+<h1>P & L Stats</h1>
+      <StatsSection>  
+  <StatCard>
+    <StatLabel>Total  Income</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total  Expense</StatLabel>
+    <StatValue>₹61999</StatValue>
+  </StatCard>
+</StatsSection>
+
+      <GraphSection>
+        <GraphItem>
+          <GraphTitle>P & L </GraphTitle>
+          <ChartContainer>
+            <Doughnut data={roundData} options={chartOptions} />
+          </ChartContainer>
+        </GraphItem>
+        <GraphItem>
+          <GraphTitle>Profit & Loss</GraphTitle>
+          <ChartContainer>
+            <Bar data={centerBarData} options={chartOptions} />
+          </ChartContainer>
+        </GraphItem>
+      </GraphSection>
+
+      <BackButton onClick={handleBackClick}>Back</BackButton>
+    </DashboardContainer>
+  );
+};
+
+export default Dashboard;
+
+
+  // Example data for the Doughnut (Round) chart
+  const roundData = {
+    labels: ["Red", "Yellow"],
+    datasets: [
+      {
+        data: [300, 100],
+        backgroundColor: ["#FF6384", "#36A2EB"],
+        hoverBackgroundColor: ["#FF6384", "#36A2EB"],
+      },
+    ],
+  };
+
+  // Example data for the Bar charts
+  const barData = {
+    labels: ["21-10-2024", "22-10-2024", "23-10-2024", "24-10-2024", "26-10-2024"],
+    datasets: [
+      {
+        label: "VIP",
+        backgroundColor: "#f00d88",
+        data: [60, 20, 30, 10, 5],
+      },
+    ],
+  };
+
+  // Example data for the Center Bar chart (with two datasets)
+  const centerBarData = {
+    labels: ["21-10-2024", "22-10-2024", "23-10-2024", "24-10-2024", "26-10-2024"],
+    datasets: [
+      {
+        label: "VIP",
+        backgroundColor: "#E57373",
+        data: [60, 20, 30, 10, 5],
+      },
+      {
+        label: "Non-VIP",
+        backgroundColor: "#81C784",
+        data: [40, 60, 45, 80, 65],
+      },
+    ],
+  };
 // Styled Components for Dashboard
 const DashboardContainer = styled.div`
   display: flex;
@@ -235,219 +608,3 @@ const BackButton = styled.button`
     outline: none;
   }
 `;
-
-// Main Dashboard Component
-const Dashboard = () => {
-  const handleBackClick = () => {
-    window.history.back();
-  };
-
-  // Example data for the Doughnut (Round) chart
-  const roundData = {
-    labels: ["Red", "Yellow"],
-    datasets: [
-      {
-        data: [300, 100],
-        backgroundColor: ["#FF6384", "#36A2EB"],
-        hoverBackgroundColor: ["#FF6384", "#36A2EB"],
-      },
-    ],
-  };
-
-  // Example data for the Bar charts
-  const barData = {
-    labels: ["21-10-2024", "22-10-2024", "23-10-2024", "24-10-2024", "26-10-2024"],
-    datasets: [
-      {
-        label: "VIP",
-        backgroundColor: "#f00d88",
-        data: [60, 20, 30, 10, 5],
-      },
-    ],
-  };
-
-  // Example data for the Center Bar chart (with two datasets)
-  const centerBarData = {
-    labels: ["21-10-2024", "22-10-2024", "23-10-2024", "24-10-2024", "26-10-2024"],
-    datasets: [
-      {
-        label: "VIP",
-        backgroundColor: "#E57373",
-        data: [60, 20, 30, 10, 5],
-      },
-      {
-        label: "Non-VIP",
-        backgroundColor: "#81C784",
-        data: [40, 60, 45, 80, 65],
-      },
-    ],
-  };
-
-  return (
-    <DashboardContainer>
-      <DashboardHeadingContainer>
-        <DashboardHeading>Dashboard</DashboardHeading>
-
-        {/* Year and Month Filter */}
-        <FilterContainer>
-          <FilterSelect>
-            <option value="January">January</option>
-            <option value="February">February</option>
-            <option value="March">March</option>
-            <option value="April">April</option>
-            <option value="May">May</option>
-            <option value="June">June</option>
-            <option value="July">July</option>
-            <option value="August">August</option>
-            <option value="September">September</option>
-            <option value="October">October</option>
-            <option value="November">November</option>
-            <option value="December">December</option>
-          </FilterSelect>
-
-          <FilterSelect>
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-            <option value="2021">2021</option>
-            <option value="2020">2020</option>
-          </FilterSelect>
-        </FilterContainer>
-      </DashboardHeadingContainer>
-
-
-      <h1>Vip Business Stats</h1>
-      <StatsSection>  
-  <StatCard>
-    <StatLabel>Total Collection</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Revenue</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  
-  <StatCard>
-    <StatLabel>Total Additional Revenue</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Total Payment</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Payment Paid</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Payment Pending</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-</StatsSection>
-
-
-<h1>Vip Franchise Business Stats</h1>
-      <StatsSection>  
-  <StatCard>
-    <StatLabel>Total Collection</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Revenue</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel> Total Payment</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Payment Paid</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Payment Pending</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-</StatsSection>
-
-<h1>Student Company Revenue Stats</h1>
-      <StatsSection>  
-  <StatCard>
-    <StatLabel>Total Course Fee</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Company Revenue</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel> Total Amount Received</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Amount Pending</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-</StatsSection>
-
-<h1>Franchise Sales Stats</h1>
-      <StatsSection>  
-  <StatCard>
-    <StatLabel>Total Sales</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Payment Paid</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total Payment Pending</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-</StatsSection>
-
-<h1>Other  Stats</h1>
-      <StatsSection>  
-  <StatCard>
-    <StatLabel>Total  Other Sales</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total  Other Expense</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-</StatsSection>
-
-<h1>P & L Stats</h1>
-      <StatsSection>  
-  <StatCard>
-    <StatLabel>Total  Income</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total  Expense</StatLabel>
-    <StatValue>₹61999</StatValue>
-  </StatCard>
-</StatsSection>
-
-      <GraphSection>
-        <GraphItem>
-          <GraphTitle>P & L </GraphTitle>
-          <ChartContainer>
-            <Doughnut data={roundData} options={chartOptions} />
-          </ChartContainer>
-        </GraphItem>
-        <GraphItem>
-          <GraphTitle>Profit & Loss</GraphTitle>
-          <ChartContainer>
-            <Bar data={centerBarData} options={chartOptions} />
-          </ChartContainer>
-        </GraphItem>
-      </GraphSection>
-
-      <BackButton onClick={handleBackClick}>Back</BackButton>
-    </DashboardContainer>
-  );
-};
-
-export default Dashboard;
