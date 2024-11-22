@@ -9,7 +9,6 @@ import SalesDetailsContainer from './components/SalesDetailsContainer';
 import FranchiseSalesContainer from './components/FranchiseSalesContainer';
 import { SnackbarProvider } from 'notistack';
 import ExpenseDetailContainer from './components/ExpenseDetailsContainer';
-import ExcelUploader from './components/AddForms/Fileupload';
 import Product from './components/Product';
 import VipFranDetails from './components/VipFranDetails';
 import CompanyDetailsContainer from './components/CompanyDetailsContainer'
@@ -42,7 +41,6 @@ const App = () => {
                     <Route path="/sales" element={<SalesDetailsContainer />} />
                     <Route path="/fsales" element={<FranchiseSalesContainer />} />
                     <Route path="/expense" element={<ExpenseDetailContainer />} />
-                    <Route path="/fileupload" element={<ExcelUploader/>} />
                     <Route path="/product" element={<Product/>} />
                    
                 </Routes>

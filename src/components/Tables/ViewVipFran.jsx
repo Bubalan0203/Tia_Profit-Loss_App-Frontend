@@ -3,7 +3,6 @@ import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
 import { Button } from '@mui/material';
 
-
 const TableContainer = styled.div`
   padding: 20px;
   border-radius: 10px;
@@ -60,7 +59,7 @@ const TableRow = styled.tr`
 
 const TableCell = styled.td`
   padding: 15px;
-  text-align: left; 
+  text-align: left;
   border-top: 1px solid #555;
 `;
 
@@ -70,39 +69,54 @@ const HeaderText = styled.h2`
   margin-bottom: 20px;
 `;
 
-const ViewVip = () => {
-  const [data, setData] = useState([]); // State to store fetched data
-  const [filteredData, setFilteredData] = useState([]); // State to store filtered data
-  const [month, setMonth] = useState('All'); // Default month filter to 'All'
-  const [year, setYear] = useState('All'); // Default year filter to 'All'
-  const [error, setError] = useState(null); // State to store errors
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+`;
 
-  // Fetch data from backend
+const PaginationButton = styled.button`
+  margin: 0 5px;
+  padding: 10px;
+  background-color: ${(props) => (props.active ? '#0a74da' : '#444')};
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  &:disabled {
+    background-color: #888;
+    cursor: not-allowed;
+  }
+`;
+
+
+const ViewVip = () => {
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [month, setMonth] = useState('All');
+  const [year, setYear] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 25; // Change as needed
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch data from the backend with the current month and year
         const response = await fetch(`${URL}/vipfranchiseupload/checkRecord?month=${month}&year=${year}`);
         const result = await response.json();
-  
-        // Ensure the response contains 'records' and handle it accordingly
+
         if (result.records && Array.isArray(result.records)) {
-          setData(result.records); // Store the records array in the state
+          setData(result.records);
         } else {
-          console.error('Unexpected response format:', result);
-          setData([]); // Reset data if response is not in the expected format
+          setData([]);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
-        setData([]); // Reset to an empty array on error
+        setData([]);
       }
     };
-  
+
     fetchData();
   }, [month, year]);
-  
-  
-  // Filter data based on month and year
+
   useEffect(() => {
     const filtered = data.filter((item) => {
       const isMonthMatch = month === 'All' || item.monthYear.startsWith(month);
@@ -110,20 +124,19 @@ const ViewVip = () => {
       return isMonthMatch && isYearMatch;
     });
     setFilteredData(filtered);
+    setCurrentPage(1); // Reset to first page on filter change
   }, [month, year, data]);
-
 
   const handleDelete = async (monthYear) => {
     try {
-      const [month, year] = monthYear.split(' '); // Split monthYear into separate values
+      const [month, year] = monthYear.split(' ');
       const response = await fetch(`${URL}/vipfranchiseupload/deleteRecord?month=${month}&year=${year}`, {
         method: 'DELETE',
       });
-  
+
       const result = await response.json();
       if (response.ok) {
         alert(result.message);
-        // Optionally refetch the records after deletion
         setMonth('All');
         setYear('All');
       } else {
@@ -131,38 +144,25 @@ const ViewVip = () => {
       }
     } catch (error) {
       alert('Error deleting record');
-      console.error(error);
     }
   };
 
-  
+  const startIndex = (currentPage - 1) * recordsPerPage;
+  const endIndex = startIndex + recordsPerPage;
+  const currentRecords = filteredData.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredData.length / recordsPerPage);
 
   return (
     <TableContainer>
       <HeaderText>View Vip Franchise</HeaderText>
       <FilterContainer>
         <FilterSelect value={month} onChange={(e) => setMonth(e.target.value)}>
-          {[
-            'All',
-            'January',
-            'February',
-            'March',
-            'April',
-            'May',
-            'June',
-            'July',
-            'August',
-            'September',
-            'October',
-            'November',
-            'December',
-          ].map((m) => (
+          {['All', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m) => (
             <option key={m} value={m}>
               {m}
             </option>
           ))}
         </FilterSelect>
-
         <FilterSelect value={year} onChange={(e) => setYear(e.target.value)}>
           {['All', 2024, 2023, 2022, 2021, 2020].map((y) => (
             <option key={y} value={y}>
@@ -185,35 +185,45 @@ const ViewVip = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredData.length > 0 ? (
-            filteredData.map((item, index) => (
+          {currentRecords.length > 0 ? (
+            currentRecords.map((item, index) => (
               <TableRow key={index}>
-                <TableCell>{index + 1}</TableCell>
+                <TableCell>{startIndex + index + 1}</TableCell>
                 <TableCell>{item.monthYear}</TableCell>
                 <TableCell>{item.totals.collection}</TableCell>
                 <TableCell>{item.totals.totalPayment}</TableCell>
                 <TableCell>{item.totals.paymentPaid}</TableCell>
                 <TableCell>{item.totals.paymentPending}</TableCell>
                 <TableCell>
-                <Button
-    variant="contained"
-    color="error"
-    style={{ textTransform: 'none' }}
-    onClick={() => handleDelete(item.monthYear)}  >
-    Delete
-  </Button>
+                  <Button variant="contained" color="error" style={{ textTransform: 'none' }} onClick={() => handleDelete(item.monthYear)}>
+                    Delete
+                  </Button>
                 </TableCell>
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan="6" style={{ textAlign: 'center', color: 'white' }}>
+              <TableCell colSpan="7" style={{ textAlign: 'center', color: 'white' }}>
                 No records found for the selected month and year.
               </TableCell>
             </TableRow>
           )}
         </tbody>
       </StyledTable>
+
+      <PaginationContainer>
+        <PaginationButton disabled={currentPage === 1} onClick={() => setCurrentPage((prev) => prev - 1)}>
+          Previous
+        </PaginationButton>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <PaginationButton key={i + 1} active={currentPage === i + 1} onClick={() => setCurrentPage(i + 1)}>
+            {i + 1}
+          </PaginationButton>
+        ))}
+        <PaginationButton disabled={currentPage === totalPages} onClick={() => setCurrentPage((prev) => prev + 1)}>
+          Next
+        </PaginationButton>
+      </PaginationContainer>
     </TableContainer>
   );
 };

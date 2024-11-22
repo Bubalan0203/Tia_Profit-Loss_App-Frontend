@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
-import { Button } from '@mui/material';
+import { Button, Pagination } from '@mui/material';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -68,39 +68,56 @@ const HeaderText = styled.h2`
   font-weight: bold;
   margin-bottom: 20px;
 `;
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+`;
+
+const PaginationButton = styled.button`
+  margin: 0 5px;
+  padding: 10px;
+  background-color: ${(props) => (props.active ? '#0a74da' : '#444')};
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  &:disabled {
+    background-color: #888;
+    cursor: not-allowed;
+  }
+`;
+
 
 const ViewCompany = () => {
-  const [data, setData] = useState([]); // State to store fetched data
-  const [filteredData, setFilteredData] = useState([]); // State to store filtered data
-  const [month, setMonth] = useState('All'); // Default month filter to 'All'
-  const [year, setYear] = useState('All'); // Default year filter to 'All'
-  const [error, setError] = useState(null); // State to store errors
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [month, setMonth] = useState('All');
+  const [year, setYear] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 25;
 
   // Fetch data from backend
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch data from the backend with the current month and year
         const response = await fetch(`${URL}/companydata/checkRecord?month=${month}&year=${year}`);
         const result = await response.json();
-
-        // Ensure the response is an array
         if (Array.isArray(result)) {
-          setData(result); // Store the array data
+          setData(result);
         } else {
           console.error('Unexpected response format:', result);
-          setData([]); // Reset data if response is not an array
+          setData([]);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-        setData([]); // Reset to an empty array on error
+        setData([]);
       }
     };
-
     fetchData();
   }, [month, year]);
 
-  // Filter data based on month and year
+  // Filter data
   useEffect(() => {
     const filtered = data.filter((item) => {
       const isMonthMatch = month === 'All' || item.monthYear.startsWith(month);
@@ -108,21 +125,24 @@ const ViewCompany = () => {
       return isMonthMatch && isYearMatch;
     });
     setFilteredData(filtered);
+    setCurrentPage(1); // Reset to the first page on filter change
   }, [month, year, data]);
 
-
+  // Pagination logic
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+  const currentRows = filteredData.slice(indexOfFirstRow, indexOfLastRow);
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
   const handleDelete = async (monthYear) => {
     try {
-      const [month, year] = monthYear.split(' '); // Split monthYear into separate values
+      const [month, year] = monthYear.split(' ');
       const response = await fetch(`${URL}/companydata/deleteRecord?month=${month}&year=${year}`, {
         method: 'DELETE',
       });
-  
       const result = await response.json();
       if (response.ok) {
         alert(result.message);
-        // Optionally refetch the records after deletion
         setMonth('All');
         setYear('All');
       } else {
@@ -182,35 +202,50 @@ const ViewCompany = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredData.length > 0 ? (
-            filteredData.map((item, index) => (
+          {currentRows.length > 0 ? (
+            currentRows.map((item, index) => (
               <TableRow key={index}>
-                <TableCell>{index + 1}</TableCell>
+                <TableCell>{indexOfFirstRow + index + 1}</TableCell>
                 <TableCell>{item.monthYear}</TableCell>
                 <TableCell>{item.totals.courseFee}</TableCell>
                 <TableCell>{item.totals.companyRevenue}</TableCell>
                 <TableCell>{item.totals.paymentPaid}</TableCell>
                 <TableCell>{item.totals.paymentPending}</TableCell>
                 <TableCell>
-                <Button
-    variant="contained"
-    color="error"
-    style={{ textTransform: 'none' }}
-    onClick={() => handleDelete(item.monthYear)}  >
-    Delete
-  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    style={{ textTransform: 'none' }}
+                    onClick={() => handleDelete(item.monthYear)}
+                  >
+                    Delete
+                  </Button>
                 </TableCell>
               </TableRow>
             ))
           ) : (
-            <TableRow> 
-              <TableCell colSpan="6" style={{ textAlign: 'center', color: 'white' }}>
+            <TableRow>
+              <TableCell colSpan="7" style={{ textAlign: 'center', color: 'white' }}>
                 No records found for the selected month and year.
               </TableCell>
             </TableRow>
           )}
         </tbody>
       </StyledTable>
+
+      <PaginationContainer>
+        <PaginationButton disabled={currentPage === 1} onClick={() => setCurrentPage((prev) => prev - 1)}>
+          Previous
+        </PaginationButton>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <PaginationButton key={i + 1} active={currentPage === i + 1} onClick={() => setCurrentPage(i + 1)}>
+            {i + 1}
+          </PaginationButton>
+        ))}
+        <PaginationButton disabled={currentPage === totalPages} onClick={() => setCurrentPage((prev) => prev + 1)}>
+          Next
+        </PaginationButton>
+      </PaginationContainer>
     </TableContainer>
   );
 };

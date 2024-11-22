@@ -85,7 +85,34 @@ const FilterControlsContainer = styled.div`
   gap: 10px;
 `;
 
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+`;
 
+const PaginationButton = styled.button`
+  margin: 0 5px;
+  padding: 10px;
+  background-color: ${(props) => (props.active ? '#0a74da' : '#444')};
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  &:disabled {
+    background-color: #888;
+    cursor: not-allowed;
+  }
+`;
+
+const SearchInput = styled.input`
+  width: 20%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  
+`;
 const ViewFsales = () => {
   const [salesData, setSalesData] = useState([]);
   const [expandedFranchise, setExpandedFranchise] = useState(null);
@@ -98,8 +125,36 @@ const ViewFsales = () => {
   const [yearFilter, setYearFilter] = useState('');
   const [expandedRoyaltyFranchise, setExpandedRoyaltyFranchise] = useState(null);
   const yearOptions = Array.from({ length: 11 }, (_, i) => 2020 + i); // Generates [2020, 2021, ..., 2030]
+  const [searchText, setSearchText] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filteredData, setFilteredData] = useState([]);
+
+  const recordsPerPage =25;
+
+  useEffect(() => {
+    const filtered = salesData.filter((sale) => {
+      const matchesSearch =
+        (sale.franchiseName?.toLowerCase().includes(searchText.toLowerCase()) || '') ||
+        (sale.franchiseId?.toLowerCase().includes(searchText.toLowerCase()) || '');
+  
+      const matchesMonth = monthFilter ? sale.month === monthFilter : true;
+      const matchesYear = yearFilter ? sale.year === yearFilter : true;
+  
+      return matchesMonth && matchesYear && matchesSearch;
+    });
+  
+    setFilteredData(filtered);
+    setCurrentPage(1); // Reset to the first page when filters change
+  }, [searchText, monthFilter, yearFilter, salesData]);
+  
+  
+  const totalPages = Math.ceil(filteredData.length / recordsPerPage);
 
 
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * recordsPerPage,
+    currentPage * recordsPerPage
+  );
 
   useEffect(() => {
     fetchSalesData();
@@ -229,7 +284,7 @@ const ViewFsales = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} style={{ textAlign: 'center' }}>
+                    <TableCell colSpan={7} style={{ textAlign: 'center' }}>
                       No Records Found
                     </TableCell>
                   </TableRow>
@@ -240,6 +295,14 @@ const ViewFsales = () => {
         ): expandedFranchise === null ? (
         <>
           <HeaderText>Franchise Summary</HeaderText>
+          <div>
+        <SearchInput
+          type="text"
+          placeholder="Search "
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+      </div>
           <StyledTable>
             <thead>
               <tr>
@@ -253,41 +316,74 @@ const ViewFsales = () => {
               </tr>
             </thead>
             <tbody>
-              {salesData.map((franchise,index) => {
-                const totalSales = calculateTotalSales(franchise.products) +
-                (franchise.financialRecords?.reduce((sum, record) => sum + record.royaltyAmount, 0) || 0);
+            {paginatedData.length > 0 ? (
+         paginatedData.map((franchise, index) => {
+     const totalSales = calculateTotalSales(franchise.products) + 
+                        (franchise.financialRecords?.reduce((sum, record) => sum + record.royaltyAmount, 0) || 0);
 
-                const totalPaymentPaid = franchise.products.reduce((total, product) => total + (product.paymentPaid || 0), 0) +
-                                      (franchise.financialRecords?.reduce((sum, record) => sum + record.amountPaid, 0) || 0);
+     const totalPaymentPaid = franchise.products.reduce((total, product) => total + (product.paymentPaid || 0), 0) +
+                               (franchise.financialRecords?.reduce((sum, record) => sum + record.amountPaid, 0) || 0);
 
-                const totalPaymentPending = totalSales - totalPaymentPaid ;
+     const totalPaymentPending = totalSales - totalPaymentPaid;
 
-                return (
-                  <TableRow key={franchise._id}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>{franchise.franchiseName}</TableCell>
-                    <TableCell>{`₹${totalSales}`}</TableCell>
-                    <TableCell>{`₹${totalPaymentPaid}`}</TableCell>
-                    <TableCell>{`₹${totalPaymentPending}`}</TableCell>
-                    <TableCell>
-                      <button 
-                        onClick={() => handleViewStatsClick(index)}
-                        disabled={totalSales === 0}
-                      >
-                        View Sales
-                      </button>
-                    </TableCell>
-                    <TableCell>
-                      <button onClick={() => setExpandedRoyaltyFranchise(index)}
-                      >
-                        View Royalty
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+     return (
+       <TableRow key={franchise._id}>
+         <TableCell>{index + 1}</TableCell>
+         <TableCell>{franchise.franchiseName}</TableCell>
+         <TableCell>{`₹${totalSales}`}</TableCell>
+         <TableCell>{`₹${totalPaymentPaid}`}</TableCell>
+         <TableCell>{`₹${totalPaymentPending}`}</TableCell>
+         <TableCell>
+           <button 
+             onClick={() => handleViewStatsClick(index)}
+             disabled={totalSales === 0}
+           >
+             View Sales
+           </button>
+         </TableCell>
+         <TableCell>
+           <button onClick={() => setExpandedRoyaltyFranchise(index)}>
+             View Royalty
+           </button>
+         </TableCell>
+       </TableRow>
+     );
+   })
+) : (
+   <TableRow>
+     <TableCell colSpan={7} style={{ textAlign: 'center' }}>
+       No Franchise Data Found
+     </TableCell>
+   </TableRow>
+)}
+
             </tbody>
           </StyledTable>
+          {filteredData.length > recordsPerPage && (
+            <PaginationContainer>
+              <PaginationButton
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </PaginationButton>
+              {[...Array(totalPages)].map((_, index) => (
+                <PaginationButton
+                  key={index}
+                  onClick={() => setCurrentPage(index + 1)}
+                  active={currentPage === index + 1}
+                >
+                  {index + 1}
+                </PaginationButton>
+              ))}
+              <PaginationButton
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </PaginationButton>
+            </PaginationContainer>
+          )}
         </>
       ) : (
          <>

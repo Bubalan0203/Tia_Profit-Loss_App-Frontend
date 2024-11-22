@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
+import * as XLSX from 'xlsx';
 import { URL } from '../../assests/mocData/config';
 import { Button } from '@mui/material';
 
@@ -49,6 +50,26 @@ const HeaderText = styled.h2`
   margin-bottom: 20px;
 `;
 
+const SearchInput = styled.input`
+  width: 20%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  
+`;
+
+const DownloadButton = styled.button`
+  padding: 10px 15px;
+  background-color: #0a74da;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  position:absolute;
+  right:10%;
+`;
+
 const BackButton = styled.button`
   background-color: #555;
   color: white;
@@ -59,17 +80,86 @@ const BackButton = styled.button`
   margin-bottom: 15px;
 `;
 
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+`;
+
+const PaginationButton = styled.button`
+  margin: 0 5px;
+  padding: 10px;
+  background-color: ${(props) => (props.active ? '#0a74da' : '#444')};
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  &:disabled {
+    background-color: #888;
+    cursor: not-allowed;
+  }
+`;
+
 const ViewHo = () => {
   const [hoData, setHoData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [viewSalary, setViewSalary] = useState(false);
   const [selectedHo, setSelectedHo] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const recordsPerPage = 25;
 
   useEffect(() => {
-    // Fetch data from the backend API
-    axios.get(`${URL}/hostaff`) // Update with your actual endpoint
-      .then((response) => setHoData(response.data))
+    axios.get(`${URL}/hostaff`)
+      .then((response) => {
+        setHoData(response.data);
+        setFilteredData(response.data);
+      })
       .catch((error) => console.error("Error fetching data:", error));
   }, []);
+
+  useEffect(() => {
+    const filtered = hoData.filter(
+      (ho) =>
+        ho.hoName.toLowerCase().includes(searchText.toLowerCase()) ||
+        ho.hoId.toLowerCase().includes(searchText.toLowerCase())
+    );
+    setFilteredData(filtered);
+    setCurrentPage(1);
+  }, [searchText, hoData]);
+
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * recordsPerPage,
+    currentPage * recordsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+
+  const handleDownload = () => {
+    const exportData = filteredData.map((ho, index) => ({
+      "S No": index + 1,
+      "HO Name": ho.hoName,
+      "HO ID": ho.hoId,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'HO Data');
+    XLSX.writeFile(workbook, 'HOData.xlsx');
+  };
+
+  const handleDelete = async (hoId) => {
+    if (window.confirm('Are you sure you want to delete this HO staff record?')) {
+      try {
+        await axios.delete(`${URL}/hostaff/${hoId}`);
+        setHoData((prev) => prev.filter((ho) => ho.hoId !== hoId));
+        alert('HO staff record deleted successfully');
+      } catch (error) {
+        console.error('Error deleting HO staff record:', error);
+        alert('Failed to delete HO staff record');
+      }
+    }
+  };
 
   const handleViewSalary = (ho) => {
     setSelectedHo(ho);
@@ -81,25 +171,20 @@ const ViewHo = () => {
     setSelectedHo(null);
   };
 
-  const handleDelete = async (hoId) => {
-    if (window.confirm('Are you sure you want to delete this HO staff record?')) {
-      try {
-        await axios.delete(`${URL}/hostaff/${hoId}`);
-        setHoData((prevData) => prevData.filter((ho) => ho.hoId !== hoId));
-        alert('HO staff record deleted successfully');
-      } catch (error) {
-        console.error('Error deleting HO staff record:', error);
-        alert('Failed to delete HO staff record');
-      }
-    }
-  };
-  
-
   return (
     <TableContainer>
       {!viewSalary ? (
         <>
           <HeaderText>View HO Details</HeaderText>
+          <div>
+            <SearchInput
+              type="text"
+              placeholder="Search"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+            <DownloadButton onClick={handleDownload}>Download Excel</DownloadButton>
+          </div>
           <StyledTable>
             <thead>
               <tr>
@@ -111,30 +196,60 @@ const ViewHo = () => {
               </tr>
             </thead>
             <tbody>
-              {hoData.map((ho, index) => (
+              {paginatedData.map((ho, index) => (
                 <TableRow key={ho.hoId}>
-                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>
+                    {(currentPage - 1) * recordsPerPage + index + 1}
+                  </TableCell>
                   <TableCell>{ho.hoName}</TableCell>
                   <TableCell>{ho.hoId}</TableCell>
                   <TableCell>
-                    <button onClick={() => handleViewSalary(ho)}
-                       disabled={!ho.salary || ho.salary.length === 0}>View Salary</button>
+                    <button
+                      onClick={() => handleViewSalary(ho)}
+                      disabled={!ho.salary || ho.salary.length === 0}
+                    >
+                      View Salary
+                    </button>
                   </TableCell>
-                  <TableCell align="center">
-  <Button
-    variant="contained"
-    color="error"
-    style={{ textTransform: 'none' }}
-    onClick={() => handleDelete(ho.hoId)}
-  >
-    Delete
-  </Button>
-</TableCell>
-
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      style={{ textTransform: 'none' }}
+                      onClick={() => handleDelete(ho.hoId)}
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </tbody>
           </StyledTable>
+          {filteredData.length > recordsPerPage && (
+            <PaginationContainer>
+              <PaginationButton
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </PaginationButton>
+              {[...Array(totalPages)].map((_, index) => (
+                <PaginationButton
+                  key={index}
+                  active={currentPage === index + 1}
+                  onClick={() => setCurrentPage(index + 1)}
+                >
+                  {index + 1}
+                </PaginationButton>
+              ))}
+              <PaginationButton
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </PaginationButton>
+            </PaginationContainer>
+          )}
         </>
       ) : (
         <>
@@ -154,7 +269,9 @@ const ViewHo = () => {
               {selectedHo.salary.map((record, index) => (
                 <TableRow key={index}>
                   <TableCell>{index + 1}</TableCell>
-                  <TableCell>{new Date(record.date).toLocaleDateString('en-GB')}</TableCell>
+                  <TableCell>
+                    {new Date(record.date).toLocaleDateString('en-GB')}
+                  </TableCell>
                   <TableCell>{record.salary}</TableCell>
                   <TableCell>{record.days}</TableCell>
                   <TableCell>{record.total}</TableCell>

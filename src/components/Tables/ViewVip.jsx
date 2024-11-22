@@ -69,31 +69,50 @@ const HeaderText = styled.h2`
   margin-bottom: 20px;
 `;
 
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+`;
+
+const PaginationButton = styled.button`
+  margin: 0 5px;
+  padding: 10px;
+  background-color: ${(props) => (props.active ? '#0a74da' : '#444')};
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  &:disabled {
+    background-color: #888;
+    cursor: not-allowed;
+  }
+`;
+
 const ViewVip = () => {
-  const [data, setData] = useState([]); // State to store fetched data
-  const [filteredData, setFilteredData] = useState([]); // State to store filtered data
-  const [month, setMonth] = useState('All'); // Default month filter to 'All'
-  const [year, setYear] = useState('All'); // Default year filter to 'All'
-  const [error, setError] = useState(null); // State to store errors
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [month, setMonth] = useState('All');
+  const [year, setYear] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 25; // Number of records per page
 
   // Fetch data from backend
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch data from the backend with the current month and year
         const response = await fetch(`${URL}/vipdata/checkRecord?month=${month}&year=${year}`);
         const result = await response.json();
 
-        // Ensure the response is an array
         if (Array.isArray(result)) {
-          setData(result); // Store the array data
+          setData(result);
         } else {
           console.error('Unexpected response format:', result);
-          setData([]); // Reset data if response is not an array
+          setData([]);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-        setData([]); // Reset to an empty array on error
+        setData([]);
       }
     };
 
@@ -108,18 +127,31 @@ const ViewVip = () => {
       return isMonthMatch && isYearMatch;
     });
     setFilteredData(filtered);
+    setCurrentPage(1); // Reset to the first page on filter change
   }, [month, year, data]);
 
+  // Paginate filtered data
+  const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * recordsPerPage,
+    currentPage * recordsPerPage
+  );
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   const handleDelete = async (month, year) => {
     const confirmDelete = window.confirm(`Are you sure you want to delete data for ${month} ${year}?`);
     if (!confirmDelete) return;
-  
+
     try {
       const response = await fetch(`${URL}/vipdata/deleteByMonthYear?month=${month}&year=${year}`, {
         method: 'DELETE',
       });
-  
+
       if (response.ok) {
         alert(`Data for ${month} ${year} deleted successfully.`);
         setFilteredData((prevData) => prevData.filter((item) => item.monthYear !== `${month} ${year}`));
@@ -132,8 +164,6 @@ const ViewVip = () => {
       alert('Failed to delete data. Please try again.');
     }
   };
-  
-  
 
   return (
     <TableContainer>
@@ -160,7 +190,6 @@ const ViewVip = () => {
             </option>
           ))}
         </FilterSelect>
-
         <FilterSelect value={year} onChange={(e) => setYear(e.target.value)}>
           {['All', 2024, 2023, 2022, 2021, 2020].map((y) => (
             <option key={y} value={y}>
@@ -173,7 +202,7 @@ const ViewVip = () => {
       <StyledTable>
         <thead>
           <tr>
-            <TableHeader first>S no</TableHeader>
+            <TableHeader first>S No</TableHeader>
             <TableHeader>Month & Year</TableHeader>
             <TableHeader>Collection</TableHeader>
             <TableHeader>Total payment</TableHeader>
@@ -183,40 +212,56 @@ const ViewVip = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredData.length > 0 ? (
-            filteredData.map((item, index) => (
+          {paginatedData.length > 0 ? (
+            paginatedData.map((item, index) => (
               <TableRow key={index}>
-                <TableCell>{index + 1}</TableCell>
+                <TableCell>{(currentPage - 1) * recordsPerPage + index + 1}</TableCell>
                 <TableCell>{item.monthYear}</TableCell>
                 <TableCell>{item.totals.collection}</TableCell>
                 <TableCell>{item.totals.totalPayment}</TableCell>
                 <TableCell>{item.totals.paymentPaid}</TableCell>
                 <TableCell>{item.totals.paymentPending}</TableCell>
                 <TableCell>
-             
-  <Button
-    variant="contained"
-    color="error"
-    style={{ textTransform: 'none' }}
-    onClick={() => handleDelete(item.monthYear.split(' ')[0], item.monthYear.split(' ')[1])}
-  >
-    Delete
-  </Button>
-</TableCell>
-
-
-
+                  <Button
+                    variant="contained"
+                    color="error"
+                    style={{ textTransform: 'none' }}
+                    onClick={() => handleDelete(item.monthYear.split(' ')[0], item.monthYear.split(' ')[1])}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan="6" style={{ textAlign: 'center', color: 'white' }}>
+              <TableCell colSpan="7" style={{ textAlign: 'center', color: 'white' }}>
                 No records found for the selected month and year.
               </TableCell>
             </TableRow>
           )}
         </tbody>
       </StyledTable>
+
+      {totalPages > 1 && (
+        <PaginationContainer>
+          <PaginationButton disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>
+            Previous
+          </PaginationButton>
+          {Array.from({ length: totalPages }, (_, index) => (
+            <PaginationButton
+              key={index + 1}
+              active={currentPage === index + 1}
+              onClick={() => handlePageChange(index + 1)}
+            >
+              {index + 1}
+            </PaginationButton>
+          ))}
+          <PaginationButton disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>
+            Next
+          </PaginationButton>
+        </PaginationContainer>
+      )}
     </TableContainer>
   );
 };

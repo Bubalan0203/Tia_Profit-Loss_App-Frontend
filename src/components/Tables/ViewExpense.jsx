@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
 import { URL } from '../../assests/mocData/config';
+import * as XLSX from 'xlsx';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -67,14 +68,67 @@ const FilterSelect = styled.select`
   background-color: #311c31;
   color: white;
 `;
+
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+`;
+
+const PaginationButton = styled.button`
+  margin: 0 5px;
+  padding: 10px;
+  background-color: ${(props) => (props.active ? '#0a74da' : '#444')};
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  &:disabled {
+    background-color: #888;
+    cursor: not-allowed;
+  }
+`;
+
+const SearchInput = styled.input`
+  width: 20%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  
+`;
+
+const DownloadButton = styled.button`
+  padding: 10px 15px;
+  background-color: #0a74da;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  position:absolute;
+  right:10%;
+`;
+
+const NoRecordsFound = styled.tr`
+  td {
+    text-align: center;
+    color: white;
+    font-size: 18px;
+    padding: 20px;
+  }
+`;
+
+
+
 const ViewExpense = () => {
   const [salesData, setSalesData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
   const [month, setMonth] = useState('All');
   const [year, setYear] = useState('All');
   const [searchText, setSearchText] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [filteredData, setFilteredData] = useState([]);
 
+  const recordsPerPage = 25;
   useEffect(() => {
     // Filter based on search text, month, and year
     const filtered = salesData.filter((sale) => {
@@ -110,9 +164,46 @@ const ViewExpense = () => {
       });
   }, []);
 
+
+  const handleDownload = () => {
+    // Map data to include custom headers
+    const exportData = salesData.map((sale, index) => ({
+      "S No": index + 1,
+      "Product Name": sale.productName,
+      Description: sale.description,
+      Price: sale.price,
+      Count: sale.count,
+      Total: sale.total,
+    }));
+  
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'SalesData');
+    XLSX.writeFile(workbook, 'expenseData.xlsx');
+  };
+  
+  // Pagination handlers
+  const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+
+
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * recordsPerPage,
+    currentPage * recordsPerPage
+  );
+
+
   return (
     <TableContainer>
       <HeaderText>View Expense</HeaderText>
+      <div>
+        <SearchInput
+          type="text"
+          placeholder="Search "
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+        <DownloadButton onClick={handleDownload}>Download Excel</DownloadButton>
+      </div>
       <FilterContainer>
         <FilterSelect value={month} onChange={(e) => setMonth(e.target.value)}>
           {[
@@ -145,6 +236,7 @@ const ViewExpense = () => {
         </FilterSelect>
       </FilterContainer>
       <br></br>
+      
       <StyledTable>
         <thead>
           <tr>
@@ -158,7 +250,8 @@ const ViewExpense = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredData.map((sale, index) => (
+        {paginatedData.length > 0 ? (
+           paginatedData.map((sale, index) => (
             <TableRow key={sale._id}>
               <TableCell>{index + 1}</TableCell>
               <TableCell>{sale.productName}</TableCell>
@@ -168,9 +261,38 @@ const ViewExpense = () => {
               <TableCell>{sale.total}</TableCell>
               <TableCell>Edit | Delete</TableCell>
             </TableRow>
-          ))}
+         ))) : (
+          <NoRecordsFound>
+            <td colSpan="5">No Records Found</td>
+          </NoRecordsFound>
+        )}
         </tbody>
       </StyledTable>
+      {filteredData.length > recordsPerPage && (
+        <PaginationContainer>
+          <PaginationButton
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </PaginationButton>
+          {[...Array(totalPages)].map((_, index) => (
+            <PaginationButton
+              key={index}
+              onClick={() => setCurrentPage(index + 1)}
+              active={currentPage === index + 1}
+            >
+              {index + 1}
+            </PaginationButton>
+          ))}
+          <PaginationButton
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </PaginationButton>
+        </PaginationContainer>
+      )}
     </TableContainer>
   );
 };

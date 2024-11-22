@@ -30,6 +30,7 @@ const Dashboard = () => {
   const [expenseData, setExpenseData] = useState([]);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
+  const [hoData, setHoData] = useState([]);
   const [month, setMonth] = useState("All");
   const [year, setYear] = useState("All");
   const [data, setData] = useState(null);
@@ -317,53 +318,84 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
+  // Fetch data from the backend API
+  axios.get(`${URL}/hostaff`) // Update with your actual endpoint
+    .then((response) => setHoData(response.data))
+    .catch((error) => console.error("Error fetching data:", error));
+}, []);
+
+useEffect(() => {
   const filterAndCalculateTotals = () => {
-      let filteredSales = [...saleData];
-      let filteredExpenses = [...expenseData];
+    let filteredSales = [...saleData];
+    let filteredExpenses = [...expenseData];
+    let hoTotalSalary = 0;
 
-      // Handle month filtering
-      if (month !== "All") {
-        const monthNames = [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-        ];
-        
-        // Find the month index (0-11) to compare against the createdAt month index
-        const monthIndex = monthNames.indexOf(month);
-        filteredSales = filteredSales.filter((sale) => {
-            const saleMonth = new Date(sale.createdAt).getMonth(); // Returns a 0-based month index
-            return saleMonth === monthIndex;
+    // Month and Year Mapping
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    const monthIndex = month !== "All" ? monthNames.indexOf(month) : null;
+    const selectedYear = year !== "All" ? parseInt(year) : null;
+
+    // Calculate the filtered total salary from HO data
+    if (hoData && hoData.length > 0) {
+      hoTotalSalary = hoData.reduce((total, ho) => {
+        // Filter the salary array by month and year
+        const filteredSalary = ho.salary.filter((salaryItem) => {
+          const salaryDate = new Date(salaryItem.date);
+          const salaryMonth = salaryDate.getMonth(); // 0-based month index
+          const salaryYear = salaryDate.getFullYear();
+
+          const matchesMonth = monthIndex === null || salaryMonth === monthIndex;
+          const matchesYear = selectedYear === null || salaryYear === selectedYear;
+
+          return matchesMonth && matchesYear;
         });
 
-        filteredExpenses = filteredExpenses.filter((expense) => {
-            const expenseMonth = new Date(expense.createdAt).getMonth(); // Returns a 0-based month index
-            return expenseMonth === monthIndex;
-        });
+        // Sum up the filtered salary totals
+        const salaryTotal = filteredSalary.reduce((sum, salaryItem) => sum + (salaryItem.total || 0), 0);
+        return total + salaryTotal;
+      }, 0);
     }
 
-      // Handle year filtering
-      if (year !== "All") {
-          filteredSales = filteredSales.filter((sale) => {
-              const saleYear = new Date(sale.createdAt).getFullYear();
-              return saleYear === parseInt(year);
-          });
+    // Filter sales and expenses by month and year
+    if (month !== "All") {
+      filteredSales = filteredSales.filter((sale) => {
+        const saleMonth = new Date(sale.createdAt).getMonth();
+        return saleMonth === monthIndex;
+      });
 
-          filteredExpenses = filteredExpenses.filter((expense) => {
-              const expenseYear = new Date(expense.createdAt).getFullYear();
-              return expenseYear === parseInt(year);
-          });
-      }
+      filteredExpenses = filteredExpenses.filter((expense) => {
+        const expenseMonth = new Date(expense.createdAt).getMonth();
+        return expenseMonth === monthIndex;
+      });
+    }
 
-      // Sum the total sales and expenses
-      const totalSale = filteredSales.reduce((total, sale) => total + parseFloat(sale.total), 0);
-      const totalExpense = filteredExpenses.reduce((total, expense) => total + parseFloat(expense.total), 0);
+    if (year !== "All") {
+      filteredSales = filteredSales.filter((sale) => {
+        const saleYear = new Date(sale.createdAt).getFullYear();
+        return saleYear === selectedYear;
+      });
 
-      setTotalSale(totalSale);
-      setTotalExpense(totalExpense);
+      filteredExpenses = filteredExpenses.filter((expense) => {
+        const expenseYear = new Date(expense.createdAt).getFullYear();
+        return expenseYear === selectedYear;
+      });
+    }
+
+    // Calculate total sales and expenses
+    const totalSale = filteredSales.reduce((total, sale) => total + parseFloat(sale.total), 0);
+    const totalExpense = filteredExpenses.reduce((total, expense) => total + parseFloat(expense.total), 0) + hoTotalSalary;
+
+    setTotalSale(totalSale);
+    setTotalExpense(totalExpense);
   };
 
   filterAndCalculateTotals();
-}, [saleData, expenseData, month, year]);
+}, [saleData, expenseData, month, year, hoData]);
+
 
 useEffect(() => {
   const mapDataToStats = () => {
@@ -409,7 +441,7 @@ useEffect(() => {
     (stats.vipBusiness.paymentPaid || 0) +
     (stats.vipFranchiseBusiness.paymentPaid || 0) +
     (stats.otherStats.totalExpense || 0);
-console.log(stats.vipBusiness.paymentPaid,stats.vipFranchiseBusiness.paymentPaid,stats.otherStats.totalExpense )
+
   setTotalIncome(income);
   setTotalExpenses(expenses);
 }, [
@@ -442,7 +474,7 @@ console.log(stats.vipBusiness.paymentPaid,stats.vipFranchiseBusiness.paymentPaid
        {/* Year and Month Filter */}
        <FilterContainer>
           <FilterSelect value={month} onChange={handleMonthChange}>
-            <option value="All">All Months</option>
+            <option value="All">All</option>
             <option value="January">January</option>
             <option value="February">February</option>
             <option value="March">March</option>
@@ -458,7 +490,7 @@ console.log(stats.vipBusiness.paymentPaid,stats.vipFranchiseBusiness.paymentPaid
           </FilterSelect>
 
           <FilterSelect value={year} onChange={handleYearChange}>
-            <option value="All">All Years</option>
+            <option value="All">All</option>
             <option value="2024">2024</option>
             <option value="2023">2023</option>
             <option value="2022">2022</option>
@@ -575,7 +607,7 @@ console.log(stats.vipBusiness.paymentPaid,stats.vipFranchiseBusiness.paymentPaid
   <ChartContainer>
     <Bar
       data={{
-        labels: ["Company Buisness", "Franchise Sales", "Total Sales"], // Labels for each bar
+        labels: ["Company Buisness", "Franchise Sales", "Other Sales"], // Labels for each bar
         datasets: [
           {
             label: "Profit Data", // Dataset label
@@ -620,7 +652,7 @@ console.log(stats.vipBusiness.paymentPaid,stats.vipFranchiseBusiness.paymentPaid
   <ChartContainer>
     <Bar
       data={{
-        labels: ["Vip Buisness", "Vip Franchise Buisness", "Total Expense"], // Labels for each bar
+        labels: ["Vip Buisness", "Vip Franchise Buisness", "Other Expense"], // Labels for each bar
         datasets: [
           {
             label: "Profit Data", // Dataset label
@@ -772,8 +804,8 @@ const StatValue = styled.div`
 const GraphSection = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 5rem;
-  margin-bottom: 2rem;
+  gap: 3.5rem;
+  margin-bottom: 0.5rem;
   padding: 1rem;
 `;
 
