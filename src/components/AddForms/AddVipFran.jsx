@@ -33,6 +33,7 @@ const UploadVIPFranchise = () => {
 
       const filteredData = jsonData.map(row => ({
         collection: parseFloat(row["Collection"] || 0),
+        revenue:parseFloat(row["Revenue"]||0),
         totalPayment: parseFloat(row["Total Payment"] || 0),
         paymentPaid: parseFloat(row["Payment Paid"] || 0),
         paymentPending: parseFloat(row["Payment Pending"] || 0),
@@ -48,12 +49,13 @@ const UploadVIPFranchise = () => {
     return data.reduce(
       (acc, row) => {
         acc.collection += row.collection;
+        acc.revenue+=row.revenue;
         acc.totalPayment += row.totalPayment;
         acc.paymentPaid += row.paymentPaid;
         acc.paymentPending += row.paymentPending;
         return acc;
       },
-      { collection: 0, totalPayment: 0, paymentPaid: 0, paymentPending: 0 }
+      { collection: 0,revenue:0, totalPayment: 0, paymentPaid: 0, paymentPending: 0 }
     );
   };
 
@@ -145,6 +147,7 @@ const UploadVIPFranchise = () => {
           <Totals>
             <h2>Calculated Totals:</h2>
             <p>Collection: {totals.collection.toFixed(2)}</p>
+            <p>Revenue: {totals.revenue.toFixed(2)}</p>
             <p>Total Payment: {totals.totalPayment.toFixed(2)}</p>
             <p>Payment Paid: {totals.paymentPaid.toFixed(2)}</p>
             <p>Payment Pending: {totals.paymentPending.toFixed(2)}</p>

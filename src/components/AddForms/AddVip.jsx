@@ -5,12 +5,11 @@ import { URL } from "../../assests/mocData/config";
 import styled from "styled-components";
 
 const UploadVIP = () => {
-  const [fileData, setFileData] = useState(null);
+  const [totals, setTotals] = useState(null);
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
   const [message, setMessage] = useState("");
-  const [totals, setTotals] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false); // For confirmation dialog
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const months = [
     "January", "February", "March", "April", "May", 
@@ -33,6 +32,8 @@ const UploadVIP = () => {
 
       const filteredData = jsonData.map(row => ({
         collection: parseFloat(row["Collection"] || 0),
+        revenue: parseFloat(row["Revenue"] || 0),
+        additionalRevenue: parseFloat(row["Additional Revenue"] || 0),
         totalPayment: parseFloat(row["Total Payment"] || 0),
         paymentPaid: parseFloat(row["Payment Paid"] || 0),
         paymentPending: parseFloat(row["Payment Pending"] || 0),
@@ -48,12 +49,14 @@ const UploadVIP = () => {
     return data.reduce(
       (acc, row) => {
         acc.collection += row.collection;
+        acc.revenue += row.revenue;
+        acc.additionalRevenue += row.additionalRevenue;
         acc.totalPayment += row.totalPayment;
         acc.paymentPaid += row.paymentPaid;
         acc.paymentPending += row.paymentPending;
         return acc;
       },
-      { collection: 0, totalPayment: 0, paymentPaid: 0, paymentPending: 0 }
+      { collection: 0, revenue: 0, additionalRevenue: 0, totalPayment: 0, paymentPaid: 0, paymentPending: 0 }
     );
   };
 
@@ -61,16 +64,16 @@ const UploadVIP = () => {
     try {
       const response = await axios.get(`${URL}/vipdata/checkRecord`, {
         params: { month, year },
-      });
 
-      if (response.data && response.data.length > 0) {
+      });
+console.log(response.data);
+      if (response.data?.exists) {
         setShowConfirm(true); // Show confirmation dialog
-        console.log("Record exists, showing confirmation dialog."); // Debugging
       } else {
         handleSubmit();
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || "An error occurred while checking the record.");
+      setMessage(error.response?.data?.message || "Error while checking the record.");
       console.error("Error in checkIfRecordExists:", error);
     }
   };
@@ -86,26 +89,26 @@ const UploadVIP = () => {
         month,
         year,
         totals,
-        replace, // Pass the flag for replacing the record
+        replace,
       });
       setMessage(response.data.message);
       resetForm();
     } catch (error) {
       setMessage(error.response?.data?.message || "An error occurred.");
+      console.error("Error in handleSubmit:", error);
     }
   };
 
   const handleReplaceRecord = () => {
-    handleSubmit(true); // Call handleSubmit with replace set to true
+    handleSubmit(true); // Pass `true` to replace the record
     setShowConfirm(false); // Close confirmation dialog
   };
 
   const resetForm = () => {
-    setFileData(null);
+    setTotals(null);
     setMonth("");
     setYear("");
     setMessage("");
-    setTotals(null);
     setShowConfirm(false);
   };
 
@@ -124,9 +127,7 @@ const UploadVIP = () => {
           <Select value={month} onChange={(e) => setMonth(e.target.value)}>
             <Option value="">Select Month</Option>
             {months.map((month) => (
-              <Option key={month} value={month}>
-                {month}
-              </Option>
+              <Option key={month} value={month}>{month}</Option>
             ))}
           </Select>
         </Dropdown>
@@ -136,9 +137,7 @@ const UploadVIP = () => {
           <Select value={year} onChange={(e) => setYear(e.target.value)}>
             <Option value="">Select Year</Option>
             {years.map((year) => (
-              <Option key={year} value={year}>
-                {year}
-              </Option>
+              <Option key={year} value={year}>{year}</Option>
             ))}
           </Select>
         </Dropdown>
@@ -147,15 +146,17 @@ const UploadVIP = () => {
           <Totals>
             <h2>Calculated Totals:</h2>
             <p>Collection: {totals.collection.toFixed(2)}</p>
+            <p>Revenue: {totals.revenue.toFixed(2)}</p>
+            <p>Additional Revenue: {totals.additionalRevenue.toFixed(2)}</p>
             <p>Total Payment: {totals.totalPayment.toFixed(2)}</p>
-            <p>Payment Paid: {totals.paymentPaid.toFixed(2)}</p>
-            <p>Payment Pending: {totals.paymentPending.toFixed(2)}</p>
+            <p>Total Payment Paid: {totals.paymentPaid.toFixed(2)}</p>
+            <p>Total Payment Pending: {totals.paymentPending.toFixed(2)}</p>
           </Totals>
         )}
 
         <ButtonContainer>
           <Button onClick={checkIfRecordExists}>Submit</Button>
-          <ButtonCancelC onClick={resetForm}>Cancel</ButtonCancelC>
+          <ButtonCancel onClick={resetForm}>Cancel</ButtonCancel>
         </ButtonContainer>
 
         {showConfirm && (
@@ -173,6 +174,8 @@ const UploadVIP = () => {
 };
 
 export default UploadVIP;
+
+// Styled Components (No changes needed here)
 
 // Styled Components
 const Container = styled.div`
