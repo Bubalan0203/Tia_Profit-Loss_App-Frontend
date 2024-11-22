@@ -566,14 +566,100 @@ console.log(stats.vipBusiness.paymentPaid,stats.vipFranchiseBusiness.paymentPaid
     }}
   />
 </ChartContainer>
+        </GraphItem>
 
-        </GraphItem>
-        <GraphItem>
-          <GraphTitle>Profit & Loss</GraphTitle>
-          <ChartContainer>
-            <Bar data={centerBarData} options={chartOptions} />
-          </ChartContainer>
-        </GraphItem>
+    
+
+<GraphItem>
+  <GraphTitle>Profit</GraphTitle>
+  <ChartContainer>
+    <Bar
+      data={{
+        labels: ["Company Buisness", "Franchise Sales", "Total Sales"], // Labels for each bar
+        datasets: [
+          {
+            label: "Profit Data", // Dataset label
+            data: [CompanyDataTotals.paymentPaid, totalPaymentPaid, totalSale], // Dynamic data values
+            backgroundColor: ["#4CAF50", "#F44336", "#2196F3"], // Colors for bars
+            hoverBackgroundColor: ["#81C784", "#E57373", "#64B5F6"], // Hover colors
+          },
+        ],
+      }}
+      options={{
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false, // Legend is hidden since there's one dataset
+          },
+          tooltip: {
+            enabled: true, // Tooltips enabled for better interaction
+          },
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false, // Remove gridlines for a cleaner x-axis
+            },
+          },
+          y: {
+            beginAtZero: true, // Ensure y-axis starts from 0
+            ticks: {
+              precision: 0, // Avoid decimals if the values are integers
+            },
+          },
+        },
+      }}
+    />
+  </ChartContainer>
+</GraphItem>
+
+
+<GraphItem>
+  <GraphTitle>Loss</GraphTitle>
+  <ChartContainer>
+    <Bar
+      data={{
+        labels: ["Vip Buisness", "Vip Franchise Buisness", "Total Expense"], // Labels for each bar
+        datasets: [
+          {
+            label: "Profit Data", // Dataset label
+            data: [totals.paymentPaid,vipFranchiseTotals.paymentPaid,totalExpense], // Dynamic data values
+            backgroundColor: ["#4CAF50", "#F44336", "#2196F3"], // Colors for bars
+            hoverBackgroundColor: ["#81C784", "#E57373", "#64B5F6"], // Hover colors
+          },
+        ],
+      }}
+      options={{
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false, // Legend is hidden since there's one dataset
+          },
+          tooltip: {
+            enabled: true, // Tooltips enabled for better interaction
+          },
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false, // Remove gridlines for a cleaner x-axis
+            },
+          },
+          y: {
+            beginAtZero: true, // Ensure y-axis starts from 0
+            ticks: {
+              precision: 0, // Avoid decimals if the values are integers
+            },
+          },
+        },
+      }}
+    />
+  </ChartContainer>
+</GraphItem>;
+
+        
       </GraphSection>
 
       <BackButton onClick={handleBackClick}>Back</BackButton>
@@ -582,38 +668,6 @@ console.log(stats.vipBusiness.paymentPaid,stats.vipFranchiseBusiness.paymentPaid
 };
 
 export default Dashboard;
-
-
- 
-
-  // Example data for the Bar charts
-  const barData = {
-    labels: ["21-10-2024", "22-10-2024", "23-10-2024", "24-10-2024", "26-10-2024"],
-    datasets: [
-      {
-        label: "VIP",
-        backgroundColor: "#f00d88",
-        data: [60, 20, 30, 10, 5],
-      },
-    ],
-  };
-
-  // Example data for the Center Bar chart (with two datasets)
-  const centerBarData = {
-    labels: ["21-10-2024", "22-10-2024", "23-10-2024", "24-10-2024", "26-10-2024"],
-    datasets: [
-      {
-        label: "VIP",
-        backgroundColor: "#E57373",
-        data: [60, 20, 30, 10, 5],
-      },
-      {
-        label: "Non-VIP",
-        backgroundColor: "#81C784",
-        data: [40, 60, 45, 80, 65],
-      },
-    ],
-  };
 
 const DashboardContainer = styled.div`
   display: flex;
@@ -717,8 +771,8 @@ const StatValue = styled.div`
 
 const GraphSection = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 5rem;
   margin-bottom: 2rem;
   padding: 1rem;
 `;
@@ -766,36 +820,11 @@ const GraphTitle = styled.h3`
 `;
 
 const ChartContainer = styled.div`
-  width: 100%;
+  width: 98%;
   height: 300px; /* Set a fixed height for a consistent look */
   position: relative;
 `;
 // Set responsive options for Chart.js
-const chartOptions = {
-  maintainAspectRatio: false,
-  responsive: true,
-  plugins: {
-    legend: {
-      display: true,
-      position: "top",
-      labels: {
-        font: {
-          size: 14,
-          weight: 'bold'
-        },
-        color: "#fff"
-      }
-    },
-    tooltip: {
-      backgroundColor: "rgba(0, 0, 0, 0.7)", // Dark background for tooltips
-      titleColor: "#fff",
-      bodyColor: "#fff",
-    },
-    title: {
-      display: false,
-    },
-  },
-};
 
 const BackButton = styled.button`
   background-color: #f00d88;

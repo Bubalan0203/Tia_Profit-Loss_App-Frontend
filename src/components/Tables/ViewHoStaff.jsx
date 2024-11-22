@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
-import {Button} from '@mui/material';
+import { Button } from '@mui/material';
+
 const TableContainer = styled.div`
   padding: 20px;
   border-radius: 10px;
@@ -79,6 +80,7 @@ const ViewHo = () => {
     setViewSalary(false);
     setSelectedHo(null);
   };
+
   const handleDelete = async (hoId) => {
     if (window.confirm('Are you sure you want to delete this HO staff record?')) {
       try {
@@ -92,6 +94,7 @@ const ViewHo = () => {
     }
   };
   
+
   return (
     <TableContainer>
       {!viewSalary ? (
