@@ -178,6 +178,7 @@ const ViewVip = () => {
             <TableHeader first>S no</TableHeader>
             <TableHeader>Month & Year</TableHeader>
             <TableHeader>Collection</TableHeader>
+            <TableHeader>Revenue</TableHeader>
             <TableHeader>Total payment</TableHeader>
             <TableHeader>Payment Paid</TableHeader>
             <TableHeader>Payment Pending</TableHeader>
@@ -191,6 +192,7 @@ const ViewVip = () => {
                 <TableCell>{startIndex + index + 1}</TableCell>
                 <TableCell>{item.monthYear}</TableCell>
                 <TableCell>{item.totals.collection}</TableCell>
+                <TableCell>{item.totals.revenue}</TableCell>
                 <TableCell>{item.totals.totalPayment}</TableCell>
                 <TableCell>{item.totals.paymentPaid}</TableCell>
                 <TableCell>{item.totals.paymentPending}</TableCell>
