@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { URL } from '../../assests/mocData/config';
+import { Button } from '@mui/material';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -158,6 +159,20 @@ const ViewFranchise = () => {
   // Pagination handlers
   const totalPages = Math.ceil(filteredData.length / recordsPerPage);
 
+
+  const handleDelete = async (franchiseId) => {
+    if (window.confirm('Are you sure you want to delete this franchise?')) {
+      try {
+        await axios.delete(`${URL}/franchise/${franchiseId}`); // API call to delete franchise
+        setFranchiseData((prev) => prev.filter((item) => item.franchiseId !== franchiseId));
+        setFilteredData((prev) => prev.filter((item) => item.franchiseId !== franchiseId));
+      } catch (error) {
+        console.error('Error deleting franchise:', error);
+      }
+    }
+  };
+  
+
   return (
     <TableContainer>
       <HeaderText>View Franchise</HeaderText>
@@ -192,7 +207,16 @@ const ViewFranchise = () => {
                 <TableCell>{franchise.franchiseName}</TableCell>
                 <TableCell>{franchise.franchiseId}</TableCell>
                 <TableCell>{franchise.branchName}</TableCell>
-                <TableCell>Edit | Delete</TableCell>
+                <TableCell>
+  <Button 
+   variant="contained"
+   color="error"
+   style={{ textTransform: 'none' }}
+   onClick={() => handleDelete(franchise.franchiseId)}>
+    Delete</Button>
+  
+</TableCell>
+
               </TableRow>
             ))
           ) : (

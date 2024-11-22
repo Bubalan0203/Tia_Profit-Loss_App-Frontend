@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
+import { Button } from '@mui/material';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -109,6 +110,31 @@ const ViewVip = () => {
     setFilteredData(filtered);
   }, [month, year, data]);
 
+
+  const handleDelete = async (month, year) => {
+    const confirmDelete = window.confirm(`Are you sure you want to delete data for ${month} ${year}?`);
+    if (!confirmDelete) return;
+  
+    try {
+      const response = await fetch(`${URL}/vipdata/deleteByMonthYear?month=${month}&year=${year}`, {
+        method: 'DELETE',
+      });
+  
+      if (response.ok) {
+        alert(`Data for ${month} ${year} deleted successfully.`);
+        setFilteredData((prevData) => prevData.filter((item) => item.monthYear !== `${month} ${year}`));
+      } else {
+        const result = await response.json();
+        alert(`Error: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Error deleting data:', error);
+      alert('Failed to delete data. Please try again.');
+    }
+  };
+  
+  
+
   return (
     <TableContainer>
       <HeaderText>View Vip</HeaderText>
@@ -148,6 +174,7 @@ const ViewVip = () => {
         <thead>
           <tr>
             <TableHeader first>S no</TableHeader>
+            <TableHeader>Month & Year</TableHeader>
             <TableHeader>Collection</TableHeader>
             <TableHeader>Total payment</TableHeader>
             <TableHeader>Payment Paid</TableHeader>
@@ -160,18 +187,25 @@ const ViewVip = () => {
             filteredData.map((item, index) => (
               <TableRow key={index}>
                 <TableCell>{index + 1}</TableCell>
+                <TableCell>{item.monthYear}</TableCell>
                 <TableCell>{item.totals.collection}</TableCell>
                 <TableCell>{item.totals.totalPayment}</TableCell>
                 <TableCell>{item.totals.paymentPaid}</TableCell>
                 <TableCell>{item.totals.paymentPending}</TableCell>
                 <TableCell>
-                  <button
-                    style={{ backgroundColor: 'red', color: 'white', padding: '5px' }}
-                    onClick={() => console.log('Delete', item.monthYear)}
-                  >
-                    Delete
-                  </button>
-                </TableCell>
+             
+  <Button
+    variant="contained"
+    color="error"
+    style={{ textTransform: 'none' }}
+    onClick={() => handleDelete(item.monthYear.split(' ')[0], item.monthYear.split(' ')[1])}
+  >
+    Delete
+  </Button>
+</TableCell>
+
+
+
               </TableRow>
             ))
           ) : (

@@ -10,6 +10,8 @@ const FinancialUploader = () => {
   const [year, setYear] = useState('');
   const [tableData, setTableData] = useState([]); // Store data for the table
   const [message, setMessage] = useState(''); // Message to show alerts or errors
+  const [duplicateRecords, setDuplicateRecords] = useState([]); // Store duplicate records
+  const [replacementInProgress, setReplacementInProgress] = useState(false); // Prevent multiple replacements
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -40,27 +42,58 @@ const FinancialUploader = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!file || !month || !year) {
       setMessage('Please fill all fields and select a file.');
       return;
     }
-
+  
     const formData = new FormData();
     formData.append('file', file);
     formData.append('month', month);
     formData.append('year', year);
-
+  
     try {
       const response = await axios.post(`${URL}/vip1/upload-financial-data`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setMessage(response.data.message);
+      setDuplicateRecords([]); // Clear duplicate records if upload is successful
     } catch (error) {
-      setMessage(error.response?.data?.error || 'Error occurred while uploading.');
+      if (error.response?.status === 409) {
+        const duplicateRecords = error.response.data.duplicateRecords;
+        setDuplicateRecords(duplicateRecords); // Store duplicates for display
+      } else {
+        setMessage(error.response?.data?.error || 'Error occurred while uploading.');
+      }
     }
   };
 
+  const handleReplaceDuplicates = async () => {
+    if (replacementInProgress) return;
+  
+    setReplacementInProgress(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('month', month);
+    formData.append('year', year);
+  
+    try {
+      // Send the overwrite flag as a query parameter, not in the body
+      const response = await axios.post(`${URL}/vip1/upload-financial-data?overwrite=true`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setMessage(response.data.message);
+      setDuplicateRecords([]); // Clear duplicates after replacement
+    } catch (error) {
+      setMessage(error.response?.data?.error || 'Error occurred while replacing.');
+    } finally {
+      setReplacementInProgress(false);
+    }
+  };
+  
+  
+  
   return (
     <Container>
       <Heading>Upload Financial Data</Heading>
@@ -125,6 +158,25 @@ const FinancialUploader = () => {
             </tbody>
           </Table>
         </TableContainer>
+      )}
+
+      {/* Show duplicate records and option to replace */}
+      {duplicateRecords.length > 0 && (
+        <DuplicateContainer>
+          <h3>Duplicate Records Found</h3>
+          <p>Records already exist for the following Franchise IDs:</p>
+          <ul>
+            {duplicateRecords.map((rec, index) => (
+              <li key={index}>Franchise ID: {rec.FranchiseID}</li>
+            ))}
+          </ul>
+          <ReplaceButton
+            onClick={handleReplaceDuplicates}
+            disabled={replacementInProgress}
+          >
+            {replacementInProgress ? 'Replacing...' : 'Replace Existing Records'}
+          </ReplaceButton>
+        </DuplicateContainer>
       )}
     </Container>
   );
@@ -235,11 +287,39 @@ const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
   th, td {
-    padding: 8px;
-    text-align: left;
+    padding: 10px;
     border: 1px solid #ccc;
+    text-align: center;
   }
   th {
-    background-color: #f2f2f2;
+    background-color: #f0f0f0;
   }
 `;
+
+const DuplicateContainer = styled.div`
+  margin-top: 30px;
+  padding: 15px;
+  background-color: #f9e0e0;
+  border-radius: 5px;
+`;
+
+const ReplaceButton = styled.button`
+  padding: 12px;
+  font-size: 1.1em;
+  background-color: #d9534f;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #45a049;
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+`;
+

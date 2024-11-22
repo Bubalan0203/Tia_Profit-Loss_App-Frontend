@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
+import { Button } from '@mui/material';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -109,6 +110,30 @@ const ViewCompany = () => {
     setFilteredData(filtered);
   }, [month, year, data]);
 
+
+
+  const handleDelete = async (monthYear) => {
+    try {
+      const [month, year] = monthYear.split(' '); // Split monthYear into separate values
+      const response = await fetch(`${URL}/companydata/deleteRecord?month=${month}&year=${year}`, {
+        method: 'DELETE',
+      });
+  
+      const result = await response.json();
+      if (response.ok) {
+        alert(result.message);
+        // Optionally refetch the records after deletion
+        setMonth('All');
+        setYear('All');
+      } else {
+        alert(result.message || 'Error deleting record');
+      }
+    } catch (error) {
+      alert('Error deleting record');
+      console.error(error);
+    }
+  };
+
   return (
     <TableContainer>
       <HeaderText>View Company Revenue</HeaderText>
@@ -148,6 +173,7 @@ const ViewCompany = () => {
         <thead>
           <tr>
             <TableHeader first>S no</TableHeader>
+            <TableHeader>Month & Year</TableHeader>
             <TableHeader>Collection</TableHeader>
             <TableHeader>Total payment</TableHeader>
             <TableHeader>Payment Paid</TableHeader>
@@ -160,22 +186,24 @@ const ViewCompany = () => {
             filteredData.map((item, index) => (
               <TableRow key={index}>
                 <TableCell>{index + 1}</TableCell>
+                <TableCell>{item.monthYear}</TableCell>
                 <TableCell>{item.totals.courseFee}</TableCell>
                 <TableCell>{item.totals.companyRevenue}</TableCell>
                 <TableCell>{item.totals.paymentPaid}</TableCell>
                 <TableCell>{item.totals.paymentPending}</TableCell>
                 <TableCell>
-                  <button
-                    style={{ backgroundColor: 'red', color: 'white', padding: '5px' }}
-                    onClick={() => console.log('Delete', item.monthYear)}
-                  >
-                    Delete
-                  </button>
+                <Button
+    variant="contained"
+    color="error"
+    style={{ textTransform: 'none' }}
+    onClick={() => handleDelete(item.monthYear)}  >
+    Delete
+  </Button>
                 </TableCell>
               </TableRow>
             ))
           ) : (
-            <TableRow>
+            <TableRow> 
               <TableCell colSpan="6" style={{ textAlign: 'center', color: 'white' }}>
                 No records found for the selected month and year.
               </TableCell>
