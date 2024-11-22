@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
-import { Button } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -70,30 +71,32 @@ const HeaderText = styled.h2`
 `;
 
 const ViewCompany = () => {
-  const [data, setData] = useState([]); // State to store fetched data
-  const [filteredData, setFilteredData] = useState([]); // State to store filtered data
-  const [month, setMonth] = useState('All'); // Default month filter to 'All'
-  const [year, setYear] = useState('All'); // Default year filter to 'All'
-  const [error, setError] = useState(null); // State to store errors
+  const { enqueueSnackbar } = useSnackbar(); // Hook for snackbar notifications
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [month, setMonth] = useState('All');
+  const [year, setYear] = useState('All');
+  const [error, setError] = useState(null);
+
+  const [openModal, setOpenModal] = useState(false); // Modal visibility state
+  const [selectedRecord, setSelectedRecord] = useState(null); // Store the record to delete
 
   // Fetch data from backend
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch data from the backend with the current month and year
         const response = await fetch(`${URL}/companydata/checkRecord?month=${month}&year=${year}`);
         const result = await response.json();
 
-        // Ensure the response is an array
         if (Array.isArray(result)) {
-          setData(result); // Store the array data
+          setData(result);
         } else {
           console.error('Unexpected response format:', result);
-          setData([]); // Reset data if response is not an array
+          setData([]);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-        setData([]); // Reset to an empty array on error
+        setData([]);
       }
     };
 
@@ -110,29 +113,44 @@ const ViewCompany = () => {
     setFilteredData(filtered);
   }, [month, year, data]);
 
+  // Open confirmation modal
+  const handleOpenModal = (monthYear) => {
+    setSelectedRecord(monthYear);
+    setOpenModal(true);
+  };
 
+  // Close confirmation modal
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setSelectedRecord(null);
+  };
 
-  const handleDelete = async (monthYear) => {
+  // Handle deletion
+  const handleDelete = async () => {
     try {
-      const [month, year] = monthYear.split(' '); // Split monthYear into separate values
+      const [month, year] = selectedRecord.split(' '); // Split monthYear into separate values
       const response = await fetch(`${URL}/companydata/deleteRecord?month=${month}&year=${year}`, {
         method: 'DELETE',
       });
   
       const result = await response.json();
       if (response.ok) {
-        alert(result.message);
-        // Optionally refetch the records after deletion
-        setMonth('All');
-        setYear('All');
+        enqueueSnackbar(result.message, { variant: 'success' });
+        
+        // Update state: Remove the deleted record from data and filteredData
+        setData((prevData) => prevData.filter(item => item.monthYear !== selectedRecord));
+        setFilteredData((prevFilteredData) => prevFilteredData.filter(item => item.monthYear !== selectedRecord));
       } else {
-        alert(result.message || 'Error deleting record');
+        enqueueSnackbar(result.message || 'Error deleting record', { variant: 'error' });
       }
     } catch (error) {
-      alert('Error deleting record');
+      enqueueSnackbar('Error deleting record', { variant: 'error' });
       console.error(error);
     }
+  
+    handleCloseModal(); // Close modal after deletion
   };
+  
 
   return (
     <TableContainer>
@@ -140,19 +158,8 @@ const ViewCompany = () => {
       <FilterContainer>
         <FilterSelect value={month} onChange={(e) => setMonth(e.target.value)}>
           {[
-            'All',
-            'January',
-            'February',
-            'March',
-            'April',
-            'May',
-            'June',
-            'July',
-            'August',
-            'September',
-            'October',
-            'November',
-            'December',
+            'All', 'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December',
           ].map((m) => (
             <option key={m} value={m}>
               {m}
@@ -190,18 +197,19 @@ const ViewCompany = () => {
                 <TableCell>{item.totals.paymentPaid}</TableCell>
                 <TableCell>{item.totals.paymentPending}</TableCell>
                 <TableCell>
-                <Button
-    variant="contained"
-    color="error"
-    style={{ textTransform: 'none' }}
-    onClick={() => handleDelete(item.monthYear)}  >
-    Delete
-  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    style={{ textTransform: 'none' }}
+                    onClick={() => handleOpenModal(item.monthYear)}
+                  >
+                    Delete
+                  </Button>
                 </TableCell>
               </TableRow>
             ))
           ) : (
-            <TableRow> 
+            <TableRow>
               <TableCell colSpan="6" style={{ textAlign: 'center', color: 'white' }}>
                 No records found for the selected month and year.
               </TableCell>
@@ -209,6 +217,22 @@ const ViewCompany = () => {
           )}
         </tbody>
       </StyledTable>
+
+      {/* Confirmation Modal */}
+      <Dialog open={openModal} onClose={handleCloseModal}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete the record for {selectedRecord}?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseModal} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="secondary">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TableContainer>
   );
 };

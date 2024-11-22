@@ -1,14 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import { URL } from '../../assests/mocData/config';
-import { Button } from '@mui/material';
-
 
 const TableContainer = styled.div`
   padding: 20px;
   border-radius: 10px;
   width: 90%;
   margin: auto;
+`;
+
+const HeaderText = styled.h2`
+  color: white;
+  font-weight: bold;
+  margin-bottom: 20px;
 `;
 
 const FilterContainer = styled.div`
@@ -63,46 +69,39 @@ const TableCell = styled.td`
   text-align: left; 
   border-top: 1px solid #555;
 `;
-
-const HeaderText = styled.h2`
-  color: white;
-  font-weight: bold;
-  margin-bottom: 20px;
-`;
+// (Other styled-components remain unchanged)
 
 const ViewVip = () => {
-  const [data, setData] = useState([]); // State to store fetched data
-  const [filteredData, setFilteredData] = useState([]); // State to store filtered data
-  const [month, setMonth] = useState('All'); // Default month filter to 'All'
-  const [year, setYear] = useState('All'); // Default year filter to 'All'
-  const [error, setError] = useState(null); // State to store errors
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [month, setMonth] = useState('All');
+  const [year, setYear] = useState('All');
+  const [error, setError] = useState(null);
+  const { enqueueSnackbar } = useSnackbar(); // Initialize enqueueSnackbar
+  
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false); // State for delete confirmation modal
+  const [deleteTarget, setDeleteTarget] = useState(null); // State to track the record being deleted
 
-  // Fetch data from backend
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch data from the backend with the current month and year
         const response = await fetch(`${URL}/vipfranchiseupload/checkRecord?month=${month}&year=${year}`);
         const result = await response.json();
-  
-        // Ensure the response contains 'records' and handle it accordingly
         if (result.records && Array.isArray(result.records)) {
-          setData(result.records); // Store the records array in the state
+          setData(result.records);
         } else {
           console.error('Unexpected response format:', result);
-          setData([]); // Reset data if response is not in the expected format
+          setData([]);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-        setData([]); // Reset to an empty array on error
+        setData([]);
       }
     };
-  
+
     fetchData();
   }, [month, year]);
-  
-  
-  // Filter data based on month and year
+
   useEffect(() => {
     const filtered = data.filter((item) => {
       const isMonthMatch = month === 'All' || item.monthYear.startsWith(month);
@@ -112,29 +111,36 @@ const ViewVip = () => {
     setFilteredData(filtered);
   }, [month, year, data]);
 
-
-  const handleDelete = async (monthYear) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+  
     try {
-      const [month, year] = monthYear.split(' '); // Split monthYear into separate values
+      const [month, year] = deleteTarget.split(' ');
       const response = await fetch(`${URL}/vipfranchiseupload/deleteRecord?month=${month}&year=${year}`, {
         method: 'DELETE',
       });
   
       const result = await response.json();
       if (response.ok) {
-        alert(result.message);
-        // Optionally refetch the records after deletion
-        setMonth('All');
+        enqueueSnackbar(result.message, { variant: 'success' });
+  
+        // Update the state to reflect the deletion
+        setData((prevData) => prevData.filter(item => item.monthYear !== deleteTarget));
+        setFilteredData((prevData) => prevData.filter(item => item.monthYear !== deleteTarget));
+  
+        setMonth('All'); // Reset filters to refetch data
         setYear('All');
       } else {
-        alert(result.message || 'Error deleting record');
+        enqueueSnackbar(result.message || 'Error deleting record', { variant: 'error' });
       }
     } catch (error) {
-      alert('Error deleting record');
+      enqueueSnackbar('Error deleting record', { variant: 'error' });
       console.error(error);
+    } finally {
+      setDeleteModalOpen(false); // Close modal
+      setDeleteTarget(null); // Reset target
     }
   };
-
   
 
   return (
@@ -193,13 +199,17 @@ const ViewVip = () => {
                 <TableCell>{item.totals.paymentPaid}</TableCell>
                 <TableCell>{item.totals.paymentPending}</TableCell>
                 <TableCell>
-                <Button
-    variant="contained"
-    color="error"
-    style={{ textTransform: 'none' }}
-    onClick={() => handleDelete(item.monthYear)}  >
-    Delete
-  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    style={{ textTransform: 'none' }}
+                    onClick={() => {
+                      setDeleteTarget(item.monthYear); // Set the record to delete
+                      setDeleteModalOpen(true); // Open confirmation modal
+                    }}
+                  >
+                    Delete
+                  </Button>
                 </TableCell>
               </TableRow>
             ))
@@ -212,6 +222,24 @@ const ViewVip = () => {
           )}
         </tbody>
       </StyledTable>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this record? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteModalOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TableContainer>
   );
 };

@@ -3,7 +3,8 @@ import styled from 'styled-components';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { URL } from '../../assests/mocData/config';
-import { Button } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -57,7 +58,6 @@ const SearchInput = styled.input`
   margin-bottom: 20px;
   border-radius: 5px;
   border: 1px solid #ccc;
-  
 `;
 
 const DownloadButton = styled.button`
@@ -67,8 +67,8 @@ const DownloadButton = styled.button`
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  position:absolute;
-  right:10%;
+  position: absolute;
+  right: 10%;
 `;
 
 const NoRecordsFound = styled.tr`
@@ -101,28 +101,30 @@ const PaginationButton = styled.button`
 `;
 
 const ViewFranchise = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [franchiseData, setFranchiseData] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedFranchise, setSelectedFranchise] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const recordsPerPage = 25;
 
   useEffect(() => {
     const fetchFranchiseData = async () => {
       try {
-        const response = await axios.get(`${URL}/franchise`); // Update with your backend API URL
+        const response = await axios.get(`${URL}/franchise`);
         setFranchiseData(response.data);
         setFilteredData(response.data);
       } catch (error) {
-        console.error("Error fetching franchise data:", error);
+        enqueueSnackbar("Error fetching franchise data.", { variant: "error" });
       }
     };
 
     fetchFranchiseData();
   }, []);
 
-  // Filter data based on the search query
   useEffect(() => {
     const filtered = franchiseData.filter((franchise) =>
       franchise.franchiseName.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -130,48 +132,52 @@ const ViewFranchise = () => {
       franchise.branchName.toLowerCase().includes(searchText.toLowerCase())
     );
     setFilteredData(filtered);
-    setCurrentPage(1); // Reset to the first page on search
+    setCurrentPage(1);
   }, [searchText, franchiseData]);
 
-  // Get paginated data
   const paginatedData = filteredData.slice(
     (currentPage - 1) * recordsPerPage,
     currentPage * recordsPerPage
   );
 
-  // Handle Excel download
   const handleDownload = () => {
-    // Map data to include custom headers
     const exportData = franchiseData.map((franchise, index) => ({
       "S No": index + 1,
       "Franchise Name": franchise.franchiseName,
       "Franchise ID": franchise.franchiseId,
       "Branch Name": franchise.branchName,
-      
     }));
-  
+
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'FranchiseData');
     XLSX.writeFile(workbook, 'FranchiseData.xlsx');
   };
-  
-  // Pagination handlers
+
   const totalPages = Math.ceil(filteredData.length / recordsPerPage);
 
-
-  const handleDelete = async (franchiseId) => {
-    if (window.confirm('Are you sure you want to delete this franchise?')) {
-      try {
-        await axios.delete(`${URL}/franchise/${franchiseId}`); // API call to delete franchise
-        setFranchiseData((prev) => prev.filter((item) => item.franchiseId !== franchiseId));
-        setFilteredData((prev) => prev.filter((item) => item.franchiseId !== franchiseId));
-      } catch (error) {
-        console.error('Error deleting franchise:', error);
-      }
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`${URL}/franchise/${selectedFranchise}`);
+      setFranchiseData((prev) => prev.filter((item) => item.franchiseId !== selectedFranchise));
+      setFilteredData((prev) => prev.filter((item) => item.franchiseId !== selectedFranchise));
+      enqueueSnackbar("Franchise deleted successfully.", { variant: "success" });
+    } catch (error) {
+      enqueueSnackbar("Error deleting franchise.", { variant: "error" });
+    } finally {
+      setIsModalOpen(false);
     }
   };
-  
+
+  const openModal = (franchiseId) => {
+    setSelectedFranchise(franchiseId);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedFranchise(null);
+  };
 
   return (
     <TableContainer>
@@ -180,7 +186,7 @@ const ViewFranchise = () => {
       <div>
         <SearchInput
           type="text"
-          placeholder="Search "
+          placeholder="Search"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
         />
@@ -190,7 +196,7 @@ const ViewFranchise = () => {
       <StyledTable>
         <thead>
           <tr>
-            <TableHeader first>S no</TableHeader>
+            <TableHeader first>S No</TableHeader>
             <TableHeader>Franchise Name</TableHeader>
             <TableHeader>Franchise ID</TableHeader>
             <TableHeader>Branch Name</TableHeader>
@@ -201,22 +207,20 @@ const ViewFranchise = () => {
           {paginatedData.length > 0 ? (
             paginatedData.map((franchise, index) => (
               <TableRow key={franchise.id}>
-                <TableCell>
-                  {(currentPage - 1) * recordsPerPage + index + 1}
-                </TableCell>
+                <TableCell>{(currentPage - 1) * recordsPerPage + index + 1}</TableCell>
                 <TableCell>{franchise.franchiseName}</TableCell>
                 <TableCell>{franchise.franchiseId}</TableCell>
                 <TableCell>{franchise.branchName}</TableCell>
                 <TableCell>
-  <Button 
-   variant="contained"
-   color="error"
-   style={{ textTransform: 'none' }}
-   onClick={() => handleDelete(franchise.franchiseId)}>
-    Delete</Button>
-  
-</TableCell>
-
+                  <Button
+                    variant="contained"
+                    color="error"
+                    style={{ textTransform: 'none' }}
+                    onClick={() => openModal(franchise.franchiseId)}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
               </TableRow>
             ))
           ) : (
@@ -252,6 +256,23 @@ const ViewFranchise = () => {
           </PaginationButton>
         </PaginationContainer>
       )}
+
+      <Dialog open={isModalOpen} onClose={closeModal}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this franchise? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeModal} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TableContainer>
   );
 };

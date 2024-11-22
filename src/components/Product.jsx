@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Box, Typography } from '@mui/material';
+import { TextField, Button, Box, Typography, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import styled from 'styled-components';
 import NavBar from './Navbar';
 import axios from 'axios';
@@ -124,6 +124,8 @@ const TableCell = styled.td`
 const Product = () => {
   const [productName, setProductName] = useState('');
   const [products, setProducts] = useState([]);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
   const { enqueueSnackbar } = useSnackbar();
 
   // Fetch products on component mount
@@ -158,21 +160,26 @@ const Product = () => {
       });
   };
 
+  // Open delete confirmation modal
+  const openDeleteConfirmation = (product) => {
+    setProductToDelete(product);
+    setOpenDeleteModal(true);
+  };
 
-  const handleDelete = (productName) => {
-    if (window.confirm(`Are you sure you want to delete the product "${productName}"?`)) {
-      axios
-        .delete(`${URL}/product/name/${encodeURIComponent(productName)}`)
+  // Handle delete product action
+  const handleDelete = () => {
+    if (productToDelete) {
+      axios.delete(`${URL}/product/name/${encodeURIComponent(productToDelete.productName)}`)
         .then(() => {
-          setProducts(products.filter((product) => product.productName !== productName)); // Remove the deleted product from the state
+          setProducts(products.filter((product) => product.productName !== productToDelete.productName));
+          enqueueSnackbar('Product deleted successfully', { variant: 'success' });
         })
         .catch((error) => {
-          console.error('Error deleting product:', error);
+          enqueueSnackbar('Error deleting product', { variant: 'error' });
         });
     }
+    setOpenDeleteModal(false); // Close the modal
   };
-  
-  
 
   return (
     <Container>
@@ -196,7 +203,6 @@ const Product = () => {
         </FormContainer>
 
         <TableContainer>
-         
           <StyledTable>
             <thead>
               <tr>
@@ -211,21 +217,37 @@ const Product = () => {
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{product.productName}</TableCell>
                   <TableCell>
-    <Button
-       onClick={() => handleDelete(product.productName)}
-       variant="contained"
-    color="error"
-    style={{ textTransform: 'none' }}
-    >
-      Delete
-    </Button>
-  </TableCell>
+                    <Button
+                      onClick={() => openDeleteConfirmation(product)}
+                      variant="contained"
+                      color="error"
+                      style={{ textTransform: 'none' }}
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </tbody>
           </StyledTable>
         </TableContainer>
       </Content>
+
+      {/* Confirmation Modal */}
+      <Dialog open={openDeleteModal} onClose={() => setOpenDeleteModal(false)}>
+        <DialogTitle>Delete Product</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this product?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteModal(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="secondary">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

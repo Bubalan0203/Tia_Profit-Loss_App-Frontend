@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
-import {Button} from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import { useSnackbar } from 'notistack';
+
 const TableContainer = styled.div`
   padding: 20px;
   border-radius: 10px;
@@ -59,15 +61,18 @@ const BackButton = styled.button`
 `;
 
 const ViewHo = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [hoData, setHoData] = useState([]);
   const [viewSalary, setViewSalary] = useState(false);
   const [selectedHo, setSelectedHo] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [hoToDelete, setHoToDelete] = useState(null);
 
   useEffect(() => {
-    // Fetch data from the backend API
-    axios.get(`${URL}/hostaff`) // Update with your actual endpoint
+    axios
+      .get(`${URL}/hostaff`) // Update with your actual endpoint
       .then((response) => setHoData(response.data))
-      .catch((error) => console.error("Error fetching data:", error));
+      .catch((error) => console.error('Error fetching data:', error));
   }, []);
 
   const handleViewSalary = (ho) => {
@@ -79,19 +84,32 @@ const ViewHo = () => {
     setViewSalary(false);
     setSelectedHo(null);
   };
-  const handleDelete = async (hoId) => {
-    if (window.confirm('Are you sure you want to delete this HO staff record?')) {
+
+  const handleOpenModal = (hoId) => {
+    setHoToDelete(hoId);
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setHoToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (hoToDelete) {
       try {
-        await axios.delete(`${URL}/hostaff/${hoId}`);
-        setHoData((prevData) => prevData.filter((ho) => ho.hoId !== hoId));
-        alert('HO staff record deleted successfully');
+        await axios.delete(`${URL}/hostaff/${hoToDelete}`);
+        setHoData((prevData) => prevData.filter((ho) => ho.hoId !== hoToDelete));
+        enqueueSnackbar('HO staff record deleted successfully!', { variant: 'success' });
       } catch (error) {
         console.error('Error deleting HO staff record:', error);
-        alert('Failed to delete HO staff record');
+        enqueueSnackbar('Failed to delete HO staff record. Please try again.', { variant: 'error' });
+      } finally {
+        handleCloseModal();
       }
     }
   };
-  
+
   return (
     <TableContainer>
       {!viewSalary ? (
@@ -114,20 +132,23 @@ const ViewHo = () => {
                   <TableCell>{ho.hoName}</TableCell>
                   <TableCell>{ho.hoId}</TableCell>
                   <TableCell>
-                    <button onClick={() => handleViewSalary(ho)}
-                       disabled={!ho.salary || ho.salary.length === 0}>View Salary</button>
+                    <button
+                      onClick={() => handleViewSalary(ho)}
+                      disabled={!ho.salary || ho.salary.length === 0}
+                    >
+                      View Salary
+                    </button>
                   </TableCell>
                   <TableCell align="center">
-  <Button
-    variant="contained"
-    color="error"
-    style={{ textTransform: 'none' }}
-    onClick={() => handleDelete(ho.hoId)}
-  >
-    Delete
-  </Button>
-</TableCell>
-
+                    <Button
+                      variant="contained"
+                      color="error"
+                      style={{ textTransform: 'none' }}
+                      onClick={() => handleOpenModal(ho.hoId)}
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </tbody>
@@ -161,6 +182,24 @@ const ViewHo = () => {
           </StyledTable>
         </>
       )}
+
+      {/* Confirmation Modal */}
+      <Dialog open={openModal} onClose={handleCloseModal}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this HO staff record? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseModal} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TableContainer>
   );
 };

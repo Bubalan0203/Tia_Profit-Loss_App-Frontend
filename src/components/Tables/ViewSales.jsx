@@ -189,6 +189,21 @@ const ViewFranchise = () => {
   const totalPages = Math.ceil(filteredData.length / recordsPerPage);
 
 
+  const handleDelete = (description) => {
+    axios
+      .delete(`${URL}/sales`, { data: { description } })
+      .then((response) => {
+        alert(response.data.message); // Notify the user
+        setSalesData((prevData) => prevData.filter((sale) => sale.description !== description));
+      })
+      .catch((error) => {
+        console.error("Error deleting the record:", error);
+        alert("Failed to delete the record. Please try again.");
+      });
+  };
+
+  
+
   return (
     <TableContainer>
       <HeaderText>View Sales</HeaderText>
@@ -260,7 +275,10 @@ const ViewFranchise = () => {
               <TableCell>{sale.price}</TableCell>
               <TableCell>{sale.count}</TableCell>
               <TableCell>{sale.total}</TableCell>
-              <TableCell>Edit | Delete</TableCell>
+              <TableCell>
+  <button onClick={() => handleDelete(sale.description)}>Delete</button>
+</TableCell>
+
             </TableRow>
           ))) : (
             <NoRecordsFound>

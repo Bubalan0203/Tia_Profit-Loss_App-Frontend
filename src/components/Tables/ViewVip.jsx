@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
-import { Button } from '@mui/material';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -70,30 +79,32 @@ const HeaderText = styled.h2`
 `;
 
 const ViewVip = () => {
-  const [data, setData] = useState([]); // State to store fetched data
-  const [filteredData, setFilteredData] = useState([]); // State to store filtered data
-  const [month, setMonth] = useState('All'); // Default month filter to 'All'
-  const [year, setYear] = useState('All'); // Default year filter to 'All'
-  const [error, setError] = useState(null); // State to store errors
+  const { enqueueSnackbar } = useSnackbar();
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [month, setMonth] = useState('All');
+  const [year, setYear] = useState('All');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Fetch data from backend
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch data from the backend with the current month and year
-        const response = await fetch(`${URL}/vipdata/checkRecord?month=${month}&year=${year}`);
+        const response = await fetch(
+          `${URL}/vipdata/checkRecord?month=${month}&year=${year}`
+        );
         const result = await response.json();
 
-        // Ensure the response is an array
         if (Array.isArray(result)) {
-          setData(result); // Store the array data
+          setData(result);
         } else {
           console.error('Unexpected response format:', result);
-          setData([]); // Reset data if response is not an array
+          setData([]);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-        setData([]); // Reset to an empty array on error
+        setData([]);
       }
     };
 
@@ -110,30 +121,44 @@ const ViewVip = () => {
     setFilteredData(filtered);
   }, [month, year, data]);
 
+  // Handle delete confirmation
+  const openDeleteDialog = (month, year) => {
+    setDeleteTarget({ month, year });
+    setDeleteDialogOpen(true);
+  };
 
-  const handleDelete = async (month, year) => {
-    const confirmDelete = window.confirm(`Are you sure you want to delete data for ${month} ${year}?`);
-    if (!confirmDelete) return;
-  
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setDeleteTarget(null);
+  };
+
+  const confirmDelete = async () => {
+    const { month, year } = deleteTarget;
+
     try {
-      const response = await fetch(`${URL}/vipdata/deleteByMonthYear?month=${month}&year=${year}`, {
-        method: 'DELETE',
-      });
-  
+      const response = await fetch(
+        `${URL}/vipdata/deleteByMonthYear?month=${month}&year=${year}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
       if (response.ok) {
-        alert(`Data for ${month} ${year} deleted successfully.`);
-        setFilteredData((prevData) => prevData.filter((item) => item.monthYear !== `${month} ${year}`));
+        enqueueSnackbar(`Data for ${month} ${year} deleted successfully.`, { variant: 'success' });
+        setFilteredData((prevData) =>
+          prevData.filter((item) => item.monthYear !== `${month} ${year}`)
+        );
       } else {
         const result = await response.json();
-        alert(`Error: ${result.message}`);
+        enqueueSnackbar(`Error: ${result.message}`, { variant: 'error' });
       }
     } catch (error) {
       console.error('Error deleting data:', error);
-      alert('Failed to delete data. Please try again.');
+      enqueueSnackbar('Failed to delete data. Please try again.', { variant: 'error' });
+    } finally {
+      closeDeleteDialog();
     }
   };
-  
-  
 
   return (
     <TableContainer>
@@ -191,19 +216,15 @@ const ViewVip = () => {
                 <TableCell>{item.totals.paymentPaid}</TableCell>
                 <TableCell>{item.totals.paymentPending}</TableCell>
                 <TableCell>
-             
-  <Button
-    variant="contained"
-    color="error"
-    style={{ textTransform: 'none' }}
-    onClick={() => handleDelete(item.monthYear.split(' ')[0], item.monthYear.split(' ')[1])}
-  >
-    Delete
-  </Button>
-</TableCell>
-
-
-
+                  <Button
+                    variant="contained"
+                    color="error"
+                    style={{ textTransform: 'none' }}
+                    onClick={() => openDeleteDialog(item.monthYear.split(' ')[0], item.monthYear.split(' ')[1])}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
               </TableRow>
             ))
           ) : (
@@ -215,6 +236,24 @@ const ViewVip = () => {
           )}
         </tbody>
       </StyledTable>
+
+      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete the data for{' '}
+            {deleteTarget?.month} {deleteTarget?.year}?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={confirmDelete} color="error">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TableContainer>
   );
 };
