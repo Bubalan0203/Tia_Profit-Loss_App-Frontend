@@ -84,6 +84,7 @@ const AddHoForm = () => {
   const [formData, setFormData] = useState({
     hoName: '',
     salary: '',
+    daysInMonth: '', // New field
     days: '',
     total: 0,
   });
@@ -103,71 +104,65 @@ const AddHoForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     setFormData((prevData) => {
       const updatedData = {
         ...prevData,
         [name]: value,
       };
 
-      // Calculate total if salary or days are updated
-      if (name === 'salary' || name === 'days') {
+      // Calculate total if relevant fields are updated
+      if (['salary', 'daysInMonth', 'days'].includes(name)) {
         const salary = name === 'salary' ? value : prevData.salary;
+        const daysInMonth = name === 'daysInMonth' ? value : prevData.daysInMonth;
         const days = name === 'days' ? value : prevData.days;
-        updatedData.total = salary * days;
+
+        // Ensure valid inputs before calculating total
+        if (salary && daysInMonth && days) {
+          updatedData.total = (salary / daysInMonth) * days;
+        } else {
+          updatedData.total = 0; // Reset total if any field is invalid
+        }
       }
 
       return updatedData;
     });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Ensure the hostaffList is available
+
     if (!hostaffList || hostaffList.length === 0) {
       console.error('Hostaff list is empty or not loaded');
-      return; // Exit if the list is empty
+      return;
     }
-  
-    // Find the selected hostaff by matching hoName
+
     const selectedHostaff = hostaffList.find((hostaff) => hostaff.hoName === formData.hoName);
     if (!selectedHostaff) {
       console.error('Selected hostaff is not valid');
-      return; // Exit if no valid hostaff is found
+      return;
     }
-  
-    // Log the hoId to verify it's being fetched correctly
-    console.log('Selected Hostaff hoId:', selectedHostaff.hoId);
-  
-    // Create the data object to send, including the hoId from selectedHostaff
+
     const dataToSubmit = {
       hoName: formData.hoName,
       salary: formData.salary,
+      daysInMonth: formData.daysInMonth,
       days: formData.days,
       total: formData.total,
     };
-  
+
     try {
-      // Send the data to the backend, with the correct hoId in the URL
       const response = await axios.post(`${URL}/hostaff/addsalary/${selectedHostaff.hoId}`, dataToSubmit);
       console.log('Form submitted successfully:', response.data);
-  
-      // Optionally, reset the form or show a success message
-      setFormData({ hoName: '', salary: '', days: '', total: 0 });
-  
-      // Optionally, show a success message (can use enqueueSnackbar here)
-      // enqueueSnackbar('Salary added successfully!', { variant: 'success' });
+
+      setFormData({ hoName: '', salary: '', daysInMonth: '', days: '', total: 0 });
     } catch (error) {
       console.error('Failed to submit form:', error);
-      // Optionally, show an error message
-      // enqueueSnackbar('Failed to add salary', { variant: 'error' });
     }
   };
-  
-  
-  
+
   const handleCancel = () => {
-    setFormData({ hoName: '', salary: '', days: '', total: 0 });
+    setFormData({ hoName: '', salary: '', daysInMonth: '', days: '', total: 0 });
   };
 
   return (
@@ -204,6 +199,17 @@ const AddHoForm = () => {
           onChange={handleChange}
         />
 
+        {/* No of Days in a Month */}
+        <StyledTextField
+          label="No of Days in a Month"
+          variant="outlined"
+          fullWidth
+          type="number"
+          name="daysInMonth"
+          value={formData.daysInMonth}
+          onChange={handleChange}
+        />
+
         {/* No of Days Input */}
         <StyledTextField
           label="No of Days"
@@ -217,7 +223,7 @@ const AddHoForm = () => {
 
         {/* Display Total */}
         <TotalBox>
-          Total: ₹{formData.total}
+          Total: ₹{formData.total.toFixed(2)}
         </TotalBox>
 
         {/* Buttons */}
@@ -229,5 +235,6 @@ const AddHoForm = () => {
     </PageContainer>
   );
 };
+
 
 export default AddHoForm;
