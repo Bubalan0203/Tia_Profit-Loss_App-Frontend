@@ -93,7 +93,7 @@ const AddHOSForm = () => {
       setFormData({ hoName: '', hoId: '' });
     } catch (error) {
       enqueueSnackbar(
-        error.response?.data?.error || 'Failed to create HO Staff',
+      'Failed to create HO Staff',
         { variant: 'error' }
       );
     }

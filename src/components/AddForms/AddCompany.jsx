@@ -3,14 +3,15 @@ import * as XLSX from "xlsx";
 import axios from "axios";
 import { URL } from "../../assests/mocData/config";
 import styled from "styled-components";
+import { useSnackbar } from "notistack";
 
 const UploadCompany = () => {
   const [fileData, setFileData] = useState(null);
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
-  const [message, setMessage] = useState("");
   const [totals, setTotals] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   const months = [
     "January", "February", "March", "April", "May", 
@@ -23,7 +24,6 @@ const UploadCompany = () => {
     setFileData(null);
     setMonth("");
     setYear("");
-    setMessage("");
     setTotals(null);
     setShowConfirm(false);
   };
@@ -49,6 +49,7 @@ const UploadCompany = () => {
 
       const calculatedTotals = calculateTotals(filteredData);
       setTotals(calculatedTotals);
+      enqueueSnackbar("File uploaded and totals calculated.", { variant: "success" });
     };
     reader.readAsArrayBuffer(file);
   };
@@ -74,17 +75,18 @@ const UploadCompany = () => {
 
       if (response.data && response.data.length > 0) {
         setShowConfirm(true);
+        enqueueSnackbar("Record already exists. Confirm to replace.", { variant: "warning" });
       } else {
         handleSubmit();
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || "An error occurred while checking the record.");
+      enqueueSnackbar(error.response?.data?.message || "Error while checking record.", { variant: "error" });
     }
   };
 
   const handleSubmit = async (replace = false) => {
     if (!totals || !month || !year) {
-      setMessage("Please select a file, month, and year.");
+      enqueueSnackbar("Please select a file, month, and year.", { variant: "warning" });
       return;
     }
 
@@ -95,10 +97,10 @@ const UploadCompany = () => {
         totals,
         replace,
       });
-      setMessage(response.data.message || "Data uploaded successfully.");
+      enqueueSnackbar(response.data.message || "Data uploaded successfully.", { variant: "success" });
       resetForm(); // Reset form after successful submission
     } catch (error) {
-      setMessage(error.response?.data?.message || "An error occurred while uploading data.");
+      enqueueSnackbar(error.response?.data?.message || "Error while uploading data.", { variant: "error" });
     }
   };
 
@@ -153,7 +155,7 @@ const UploadCompany = () => {
 
         <ButtonContainer>
           <Button onClick={checkIfRecordExists}>Submit</Button>
-          <ButtonCancelC onClick={resetForm}>Cancel</ButtonCancelC> {/* Cancel Button */}
+          <ButtonCancelC onClick={resetForm}>Cancel</ButtonCancelC>
         </ButtonContainer>
 
         {showConfirm && (
@@ -164,14 +166,11 @@ const UploadCompany = () => {
           </Confirmation>
         )}
       </Form>
-
-      {message && <Message>{message}</Message>}
     </Container>
   );
 };
 
 export default UploadCompany;
-
 
 // Styled Components
 const Container = styled.div`

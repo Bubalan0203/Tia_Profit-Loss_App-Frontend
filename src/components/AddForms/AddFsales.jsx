@@ -168,11 +168,12 @@ const AddFsalesForm = () => {
 
   const handleCancel = () => {
     setFranchiseName('');
+    setProductName('');
     setDescription('');
     setPrice('');
     setCount(1);
   };
-
+  
   return (
     <PageContainer>
       <Typography variant="h5" sx={{ color: '#fff', alignSelf: 'flex-start', marginBottom: '16px' }}>

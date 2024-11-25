@@ -3,12 +3,14 @@ import * as XLSX from "xlsx";
 import axios from "axios";
 import { URL } from "../../assests/mocData/config";
 import styled from "styled-components";
+import { useSnackbar } from "notistack";
 
 const UploadVIP = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [totals, setTotals] = useState(null);
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
-  const [message, setMessage] = useState("");
+  const [fileName, setFileName] = useState(""); // Track file name
   const [showConfirm, setShowConfirm] = useState(false);
 
   const months = [
@@ -22,6 +24,8 @@ const UploadVIP = () => {
     const file = event.target.files[0];
     if (!file) return;
 
+    setFileName(file.name); // Update file name
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const data = new Uint8Array(e.target.result);
@@ -30,7 +34,7 @@ const UploadVIP = () => {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      const filteredData = jsonData.map(row => ({
+      const filteredData = jsonData.map((row) => ({
         collection: parseFloat(row["Collection"] || 0),
         revenue: parseFloat(row["Revenue"] || 0),
         additionalRevenue: parseFloat(row["Additional Revenue"] || 0),
@@ -64,23 +68,21 @@ const UploadVIP = () => {
     try {
       const response = await axios.get(`${URL}/vipdata/checkRecord`, {
         params: { month, year },
-
       });
-console.log(response.data);
+
       if (response.data?.exists) {
         setShowConfirm(true); // Show confirmation dialog
       } else {
         handleSubmit();
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || "Error while checking the record.");
-      console.error("Error in checkIfRecordExists:", error);
+      enqueueSnackbar("Error while checking the record.", { variant: "error" });
     }
   };
 
   const handleSubmit = async (replace = false) => {
-    if (!totals || !month || !year) {
-      setMessage("Please select a file, month, and year.");
+    if (!fileName || !totals || !month || !year) {
+      enqueueSnackbar("Please upload a file, and select a month and year.", { variant: "warning" });
       return;
     }
 
@@ -91,11 +93,10 @@ console.log(response.data);
         totals,
         replace,
       });
-      setMessage(response.data.message);
+      enqueueSnackbar(response.data.message, { variant: "success" });
       resetForm();
     } catch (error) {
-      setMessage(error.response?.data?.message || "An error occurred.");
-      console.error("Error in handleSubmit:", error);
+      enqueueSnackbar(error.response?.data?.message || "An error occurred.", { variant: "error" });
     }
   };
 
@@ -108,8 +109,11 @@ console.log(response.data);
     setTotals(null);
     setMonth("");
     setYear("");
-    setMessage("");
+    setFileName("");
     setShowConfirm(false);
+
+    // Reset file input field
+    document.getElementById("fileInput").value = "";
   };
 
   return (
@@ -119,7 +123,13 @@ console.log(response.data);
       <Form>
         <FileInput>
           <Label>Upload Excel File:</Label>
-          <InputFile type="file" accept=".xlsx, .xls" onChange={handleFileUpload} />
+          <InputFile
+            id="fileInput"
+            type="file"
+            accept=".xlsx, .xls"
+            onChange={handleFileUpload}
+          />
+          {fileName && <p>Selected File: {fileName}</p>}
         </FileInput>
 
         <Dropdown>
@@ -167,14 +177,11 @@ console.log(response.data);
           </Confirmation>
         )}
       </Form>
-
-      {message && <Message>{message}</Message>}
     </Container>
   );
 };
 
 export default UploadVIP;
-
 // Styled Components (No changes needed here)
 
 // Styled Components
@@ -233,7 +240,7 @@ const Option = styled.option``;
 const Totals = styled.div`
   margin-top: 20px;
   padding: 15px;
-  background-color: #e0ffe0;
+  background-color:#000;
   border-radius: 5px;
 
   p {

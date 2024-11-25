@@ -388,6 +388,7 @@ useEffect(() => {
     // Calculate total sales and expenses
     const totalSale = filteredSales.reduce((total, sale) => total + parseFloat(sale.total), 0);
     const totalExpense = filteredExpenses.reduce((total, expense) => total + parseFloat(expense.total), 0) + hoTotalSalary;
+  
 
     setTotalSale(totalSale);
     setTotalExpense(totalExpense);
@@ -582,7 +583,7 @@ useEffect(() => {
       datasets: [
         {
           data: [totalIncome, totalExpenses], // Use dynamic data
-          backgroundColor: ["green", "red"], // Colors for each segment
+          backgroundColor: ["#4CAF50", "#F44336"], // Colors for each segment
           hoverBackgroundColor: [ "#81C784","#E57373"], // Colors on hover
         },
       ],
@@ -612,8 +613,8 @@ useEffect(() => {
           {
             label: "Profit Data", // Dataset label
             data: [CompanyDataTotals.paymentPaid, totalPaymentPaid, totalSale], // Dynamic data values
-            backgroundColor: ["#4CAF50", "#F44336", "#2196F3"], // Colors for bars
-            hoverBackgroundColor: ["#81C784", "#E57373", "#64B5F6"], // Hover colors
+            backgroundColor: ["#4CAF50", "#4CAF50", "#4CAF50"], // Colors for bars
+            hoverBackgroundColor: ["#81C784", "#81C784", "#81C784"], // Hover colors
           },
         ],
       }}
@@ -657,8 +658,8 @@ useEffect(() => {
           {
             label: "Profit Data", // Dataset label
             data: [totals.paymentPaid,vipFranchiseTotals.paymentPaid,totalExpense], // Dynamic data values
-            backgroundColor: ["#4CAF50", "#F44336", "#2196F3"], // Colors for bars
-            hoverBackgroundColor: ["#81C784", "#E57373", "#64B5F6"], // Hover colors
+            backgroundColor: ["#F44336", "#F44336", "#F44336"], // Colors for bars
+            hoverBackgroundColor: ["#E57373", "#E57373", "#E57373"], // Hover colors
           },
         ],
       }}

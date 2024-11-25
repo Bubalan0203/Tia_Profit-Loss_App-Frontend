@@ -2,15 +2,16 @@ import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import { URL } from "../../assests/mocData/config";
+import { enqueueSnackbar } from "notistack";
 import styled from "styled-components";
 
 const UploadVIPFranchise = () => {
+  const [fileInputKey, setFileInputKey] = useState(Date.now());
   const [fileData, setFileData] = useState(null);
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
-  const [message, setMessage] = useState("");
   const [totals, setTotals] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false); // For confirmation dialog
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const months = [
     "January", "February", "March", "April", "May", 
@@ -21,7 +22,10 @@ const UploadVIPFranchise = () => {
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file) {
+      enqueueSnackbar("No file selected. Please upload a valid Excel file.", { variant: "error" });
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -31,9 +35,14 @@ const UploadVIPFranchise = () => {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
+      if (jsonData.length === 0) {
+        enqueueSnackbar("The uploaded file is empty. Please upload a valid file.", { variant: "error" });
+        return;
+      }
+
       const filteredData = jsonData.map(row => ({
         collection: parseFloat(row["Collection"] || 0),
-        revenue:parseFloat(row["Revenue"]||0),
+        revenue: parseFloat(row["Revenue"] || 0),
         totalPayment: parseFloat(row["Total Payment"] || 0),
         paymentPaid: parseFloat(row["Payment Paid"] || 0),
         paymentPending: parseFloat(row["Payment Pending"] || 0),
@@ -49,62 +58,63 @@ const UploadVIPFranchise = () => {
     return data.reduce(
       (acc, row) => {
         acc.collection += row.collection;
-        acc.revenue+=row.revenue;
+        acc.revenue += row.revenue;
         acc.totalPayment += row.totalPayment;
         acc.paymentPaid += row.paymentPaid;
         acc.paymentPending += row.paymentPending;
         return acc;
       },
-      { collection: 0,revenue:0, totalPayment: 0, paymentPaid: 0, paymentPending: 0 }
+      { collection: 0, revenue: 0, totalPayment: 0, paymentPaid: 0, paymentPending: 0 }
     );
   };
 
   const checkIfRecordExists = async () => {
+    if (!month || !year || !totals) {
+      enqueueSnackbar("Please select a file, month, and year before submitting.", { variant: "warning" });
+      return;
+    }
+
     try {
       const response = await axios.get(`${URL}/vipfranchiseupload/checkRecord`, {
         params: { month, year },
       });
 
       if (response.data.exists) {
-        setShowConfirm(true); // Show the replace confirmation dialog
+        setShowConfirm(true); // Show confirmation dialog
       } else {
         handleSubmit();
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || "An error occurred.");
+      enqueueSnackbar(error.response?.data?.message || "An error occurred while checking the record.", { variant: "error" });
     }
   };
 
   const handleSubmit = async (replace = false) => {
-    if (!totals || !month || !year) {
-      setMessage("Please select a file, month, and year.");
-      return;
-    }
-
     try {
       const response = await axios.post(`${URL}/vipfranchiseupload/upload`, {
         month,
         year,
         totals,
-        replace, // Pass the flag for replacing the record
+        replace,
       });
-      setMessage(response.data.message);
+
+      enqueueSnackbar(response.data.message, { variant: "success" });
       resetForm();
     } catch (error) {
-      setMessage(error.response?.data?.message || "An error occurred.");
+      enqueueSnackbar(error.response?.data?.message || "An error occurred while submitting the data.", { variant: "error" });
     }
   };
 
   const handleReplaceRecord = () => {
-    handleSubmit(true); // Call handleSubmit with replace set to true
-    setShowConfirm(false); // Close confirmation dialog
+    handleSubmit(true); // Replace the record
+    setShowConfirm(false);
   };
 
   const resetForm = () => {
+    setFileInputKey(Date.now()); // Reset the file input key to clear the file
     setFileData(null);
     setMonth("");
     setYear("");
-    setMessage("");
     setTotals(null);
     setShowConfirm(false);
   };
@@ -116,7 +126,12 @@ const UploadVIPFranchise = () => {
       <Form>
         <FileInput>
           <Label>Upload Excel File:</Label>
-          <InputFile type="file" accept=".xlsx, .xls" onChange={handleFileUpload} />
+          <InputFile
+            key={fileInputKey} // Use unique key to reset file input
+            type="file"
+            accept=".xlsx, .xls"
+            onChange={handleFileUpload}
+          />
         </FileInput>
 
         <Dropdown>
@@ -167,8 +182,6 @@ const UploadVIPFranchise = () => {
           </Confirmation>
         )}
       </Form>
-
-      {message && <Message>{message}</Message>}
     </Container>
   );
 };

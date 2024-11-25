@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TextField, Button, Box, Typography, MenuItem } from '@mui/material';
 import { styled } from '@mui/system';
+import { useSnackbar } from 'notistack';
 import axios from 'axios';
 import { URL } from '../../assests/mocData/config';
 
@@ -79,22 +80,24 @@ const TotalBox = styled(Box)({
   fontWeight: 'bold',
 });
 
+
 const AddHoForm = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [hostaffList, setHostaffList] = useState([]);
   const [formData, setFormData] = useState({
     hoName: '',
     salary: '',
-    daysInMonth: '', // New field
+    daysInMonth: '',
     days: '',
     total: 0,
   });
 
   const fetchHostaffList = async () => {
     try {
-      const response = await axios.get(`${URL}/hostaff`); // Ensure this is the correct endpoint
-      setHostaffList(response.data); // Assuming response.data is an array of {hoId, hoName}
+      const response = await axios.get(`${URL}/hostaff`);
+      setHostaffList(response.data);
     } catch (error) {
-      console.error('Failed to fetch Hostaff list', error);
+      enqueueSnackbar('Failed to fetch Hostaff list.', { variant: 'error' });
     }
   };
 
@@ -111,17 +114,15 @@ const AddHoForm = () => {
         [name]: value,
       };
 
-      // Calculate total if relevant fields are updated
       if (['salary', 'daysInMonth', 'days'].includes(name)) {
         const salary = name === 'salary' ? value : prevData.salary;
         const daysInMonth = name === 'daysInMonth' ? value : prevData.daysInMonth;
         const days = name === 'days' ? value : prevData.days;
 
-        // Ensure valid inputs before calculating total
         if (salary && daysInMonth && days) {
           updatedData.total = (salary / daysInMonth) * days;
         } else {
-          updatedData.total = 0; // Reset total if any field is invalid
+          updatedData.total = 0;
         }
       }
 
@@ -132,37 +133,45 @@ const AddHoForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!hostaffList || hostaffList.length === 0) {
-      console.error('Hostaff list is empty or not loaded');
+    const { hoName, salary, daysInMonth, days } = formData;
+
+    // Validate required fields
+    if (!hoName || !salary || !daysInMonth || !days) {
+      enqueueSnackbar('All fields are required.', { variant: 'warning' });
       return;
     }
 
-    const selectedHostaff = hostaffList.find((hostaff) => hostaff.hoName === formData.hoName);
+    const selectedHostaff = hostaffList.find((hostaff) => hostaff.hoName === hoName);
     if (!selectedHostaff) {
-      console.error('Selected hostaff is not valid');
+      enqueueSnackbar('Selected Hostaff is not valid.', { variant: 'error' });
       return;
     }
 
     const dataToSubmit = {
-      hoName: formData.hoName,
-      salary: formData.salary,
-      daysInMonth: formData.daysInMonth,
-      days: formData.days,
+      hoName,
+      salary,
+      daysInMonth,
+      days,
       total: formData.total,
     };
 
     try {
       const response = await axios.post(`${URL}/hostaff/addsalary/${selectedHostaff.hoId}`, dataToSubmit);
-      console.log('Form submitted successfully:', response.data);
-
-      setFormData({ hoName: '', salary: '', daysInMonth: '', days: '', total: 0 });
+      enqueueSnackbar('Salary added successfully!', { variant: 'success' });
+      handleCancel(); // Reset form after successful submission
     } catch (error) {
-      console.error('Failed to submit form:', error);
+      enqueueSnackbar('Failed to submit form.', { variant: 'error' });
     }
   };
 
   const handleCancel = () => {
-    setFormData({ hoName: '', salary: '', daysInMonth: '', days: '', total: 0 });
+    setFormData({
+      hoName: '',
+      salary: '',
+      daysInMonth: '',
+      days: '',
+      total: 0,
+    });
   };
 
   return (
@@ -229,7 +238,9 @@ const AddHoForm = () => {
         {/* Buttons */}
         <ButtonContainer>
           <SubmitButton type="submit">Submit</SubmitButton>
-          <CancelButton type="button" onClick={handleCancel}>Cancel</CancelButton>
+          <CancelButton type="button" onClick={handleCancel}>
+            Cancel
+          </CancelButton>
         </ButtonContainer>
       </FormContainer>
     </PageContainer>
