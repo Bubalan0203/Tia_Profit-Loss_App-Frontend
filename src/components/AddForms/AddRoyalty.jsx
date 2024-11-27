@@ -102,7 +102,7 @@ const FinancialUploader = () => {
     setYear('');
     setTableData([]);
     setDuplicateRecords([]);
-    enqueueSnackbar('Form reset successfully.', { variant: 'info' });
+    
   };
 
   return (
@@ -284,7 +284,7 @@ const Message = styled.p`
 const TableContainer = styled.div`
   margin-top: 30px;
   padding: 15px;
-  background-color: #e0ffe0;
+  background-color: #000;;
   border-radius: 5px;
 `;
 
@@ -297,7 +297,7 @@ const Table = styled.table`
     text-align: center;
   }
   th {
-    background-color: #f0f0f0;
+    background-color: #000;;
   }
 `;
 

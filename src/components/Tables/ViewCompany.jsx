@@ -1,41 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
-import { Button, Pagination } from '@mui/material';
-
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import { useSnackbar } from 'notistack';
 const TableContainer = styled.div`
   padding: 20px;
   border-radius: 10px;
   width: 90%;
   margin: auto;
 `;
-
-const FilterContainer = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-left: 75%;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: center;
-  }
-`;
-
-const FilterSelect = styled.select`
-  padding: 0.5rem;
-  font-size: 1rem;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  background-color: #311c31;
-  color: white;
-`;
-
-const StyledTable = styled.table`
+const StyledTable = styled.div`
   width: 100%;
-  margin-top: 1%;
-  border-collapse: separate;
-  border-spacing: 0;
   color: white;
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    thead {
+      position: sticky;
+      top: 0;
+      background-color: #111;
+      z-index: 2;
+    }
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-top: 1px solid #555;
+    }
+  }
+
+  .table-body {
+    max-height: 400px; /* Set the desired height for the scrollable table body */
+    overflow-y: auto;
+    display: block;
+    width: 100%;
+  }
+
+  table thead tr {
+    display: table;
+    width: 100%;
+  }
+
+  table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed; /* Ensures columns are aligned */
+  }
 `;
 
 const TableHeader = styled.th`
@@ -62,6 +73,28 @@ const TableCell = styled.td`
   text-align: left;
   border-top: 1px solid #555;
 `;
+
+
+const FilterContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-left: 75%;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+  }
+`;
+
+const FilterSelect = styled.select`
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #311c31;
+  color: white;
+`;
+
 
 const HeaderText = styled.h2`
   color: white;
@@ -90,11 +123,13 @@ const PaginationButton = styled.button`
 
 
 const ViewCompany = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [month, setMonth] = useState('All');
   const [year, setYear] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteModal, setDeleteModal] = useState({ open: false, record: null });
   const rowsPerPage = 25;
 
   // Fetch data from backend
@@ -134,7 +169,8 @@ const ViewCompany = () => {
   const currentRows = filteredData.slice(indexOfFirstRow, indexOfLastRow);
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
-  const handleDelete = async (monthYear) => {
+  const handleDelete = async () => {
+    const { monthYear } = deleteModal.record;
     try {
       const [month, year] = monthYear.split(' ');
       const response = await fetch(`${URL}/companydata/deleteRecord?month=${month}&year=${year}`, {
@@ -142,16 +178,25 @@ const ViewCompany = () => {
       });
       const result = await response.json();
       if (response.ok) {
-        alert(result.message);
-        setMonth('All');
-        setYear('All');
+        enqueueSnackbar(result.message, { variant: 'success' });
+        // Refresh data
+        setData((prev) => prev.filter((item) => item.monthYear !== monthYear));
+        setDeleteModal({ open: false, record: null });
       } else {
-        alert(result.message || 'Error deleting record');
+        enqueueSnackbar(result.message || 'Error deleting record', { variant: 'error' });
       }
     } catch (error) {
-      alert('Error deleting record');
+      enqueueSnackbar('Error deleting record', { variant: 'error' });
       console.error(error);
     }
+  };
+
+  const openDeleteModal = (record) => {
+    setDeleteModal({ open: true, record });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ open: false, record: null });
   };
 
   return (
@@ -190,6 +235,7 @@ const ViewCompany = () => {
       </FilterContainer>
 
       <StyledTable>
+        <table>
         <thead>
           <tr>
             <TableHeader first>S no</TableHeader>
@@ -201,6 +247,7 @@ const ViewCompany = () => {
             <TableHeader last>Actions</TableHeader>
           </tr>
         </thead>
+        <div className="table-body">
         <tbody>
           {currentRows.length > 0 ? (
             currentRows.map((item, index) => (
@@ -216,7 +263,7 @@ const ViewCompany = () => {
                     variant="contained"
                     color="error"
                     style={{ textTransform: 'none' }}
-                    onClick={() => handleDelete(item.monthYear)}
+                    onClick={() => openDeleteModal(item)}
                   >
                     Delete
                   </Button>
@@ -231,6 +278,8 @@ const ViewCompany = () => {
             </TableRow>
           )}
         </tbody>
+        </div>
+        </table>
       </StyledTable>
 
       <PaginationContainer>
@@ -246,6 +295,24 @@ const ViewCompany = () => {
           Next
         </PaginationButton>
       </PaginationContainer>
+
+      {/* Confirmation Modal */}
+      <Dialog open={deleteModal.open} onClose={closeDeleteModal}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete the record for {deleteModal.record?.monthYear}?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteModal} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TableContainer>
   );
 };

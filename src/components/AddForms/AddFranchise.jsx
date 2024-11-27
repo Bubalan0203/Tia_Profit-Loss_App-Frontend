@@ -114,7 +114,7 @@ const AddFranchiseForm = () => {
           onChange={handleChange}
         />
         <StyledTextField
-          label="Franchise ID"
+          label="Franchise Email"
           variant="outlined"
           fullWidth
           name="franchiseId"

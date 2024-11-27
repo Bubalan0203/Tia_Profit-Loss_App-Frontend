@@ -30,6 +30,8 @@ const Dashboard = () => {
   const [expenseData, setExpenseData] = useState([]);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
+  const [othExpenses, setothExpenses] = useState(0);
+  const [hosalaryExpenses, sethosalaryExpenses] = useState(0);
   const [hoData, setHoData] = useState([]);
   const [month, setMonth] = useState("All");
   const [year, setYear] = useState("All");
@@ -387,9 +389,12 @@ useEffect(() => {
 
     // Calculate total sales and expenses
     const totalSale = filteredSales.reduce((total, sale) => total + parseFloat(sale.total), 0);
-    const totalExpense = filteredExpenses.reduce((total, expense) => total + parseFloat(expense.total), 0) + hoTotalSalary;
-  
-
+    const totalExpense = filteredExpenses.reduce((total, expense) => total + parseFloat(expense.total), 0) ;
+    const othexpense=filteredExpenses.reduce((total, expense) => total + parseFloat(expense.total), 0);
+   const hosalarygraph=hoTotalSalary;
+   setothExpenses(othexpense);
+   sethosalaryExpenses(hosalarygraph);
+ 
     setTotalSale(totalSale);
     setTotalExpense(totalExpense);
   };
@@ -552,12 +557,16 @@ useEffect(() => {
   <DashboardHeading>Other  Stats</DashboardHeading>
       <StatsSection>  
   <StatCard>
-    <StatLabel>Total  Other Sales</StatLabel>
+    <StatLabel>Other Sales</StatLabel>
     <StatValue> ₹{totalSale}</StatValue>
   </StatCard>
   <StatCard>
-    <StatLabel>Total  Other Expense</StatLabel>
+    <StatLabel> Other Expense</StatLabel>
     <StatValue> ₹{totalExpense}</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel> Ho Salary</StatLabel>
+    <StatValue> ₹{hosalaryExpenses}</StatValue>
   </StatCard>
 </StatsSection>
 
@@ -653,11 +662,11 @@ useEffect(() => {
   <ChartContainer>
     <Bar
       data={{
-        labels: ["Vip Buisness", "Vip Franchise Buisness", "Other Expense"], // Labels for each bar
+        labels: ["Vip Buisness", "Vip Franchise Buisness", "Other Expense","Ho Salary"], // Labels for each bar
         datasets: [
           {
             label: "Profit Data", // Dataset label
-            data: [totals.paymentPaid,vipFranchiseTotals.paymentPaid,totalExpense], // Dynamic data values
+            data: [totals.paymentPaid,vipFranchiseTotals.paymentPaid,othExpenses,hosalaryExpenses], // Dynamic data values
             backgroundColor: ["#F44336", "#F44336", "#F44336"], // Colors for bars
             hoverBackgroundColor: ["#E57373", "#E57373", "#E57373"], // Hover colors
           },

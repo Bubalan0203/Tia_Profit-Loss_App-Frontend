@@ -244,7 +244,7 @@ const Option = styled.option``;
 const Totals = styled.div`
   margin-top: 20px;
   padding: 15px;
-  background-color: #e0ffe0;
+  background-color: #000;
   border-radius: 5px;
 
   p {
@@ -303,7 +303,7 @@ const ButtonCancelC = styled.button`
 
 const Confirmation = styled.div`
   padding: 20px;
-  background-color: #fff3cd;
+  background-color: #000;
   border: 1px solid #ffecb3;
   border-radius: 5px;
   text-align: center;

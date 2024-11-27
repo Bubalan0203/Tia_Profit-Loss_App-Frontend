@@ -3,7 +3,8 @@ import axios from 'axios';
 import styled from 'styled-components';
 import * as XLSX from 'xlsx';
 import { URL } from '../../assests/mocData/config';
-import { Button } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -12,12 +13,46 @@ const TableContainer = styled.div`
   margin: auto;
 `;
 
-const StyledTable = styled.table`
+const StyledTable = styled.div`
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
   color: white;
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    thead {
+      position: sticky;
+      top: 0;
+      background-color: #111;
+      z-index: 2;
+    }
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-top: 1px solid #555;
+    }
+  }
+
+  .table-body {
+    max-height: 400px; /* Set the desired height for the scrollable table body */
+    overflow-y: auto;
+    display: block;
+    width: 100%;
+  }
+
+  table thead tr {
+    display: table;
+    width: 100%;
+  }
+
+  table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed; /* Ensures columns are aligned */
+  }
 `;
+
 
 const TableHeader = styled.th`
   background-color: #111;
@@ -107,16 +142,20 @@ const ViewHo = () => {
   const [selectedHo, setSelectedHo] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedHoId, setSelectedHoId] = useState(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const recordsPerPage = 25;
 
-  useEffect(() => {
+
+ useEffect(() => {
     axios.get(`${URL}/hostaff`)
       .then((response) => {
         setHoData(response.data);
         setFilteredData(response.data);
       })
-      .catch((error) => console.error("Error fetching data:", error));
+      .catch((error) => enqueueSnackbar('Error fetching data.', { variant: 'error' }));
   }, []);
 
   useEffect(() => {
@@ -128,6 +167,7 @@ const ViewHo = () => {
     setFilteredData(filtered);
     setCurrentPage(1);
   }, [searchText, hoData]);
+
 
   const paginatedData = filteredData.slice(
     (currentPage - 1) * recordsPerPage,
@@ -148,18 +188,30 @@ const ViewHo = () => {
     XLSX.writeFile(workbook, 'HOData.xlsx');
   };
 
-  const handleDelete = async (hoId) => {
-    if (window.confirm('Are you sure you want to delete this HO staff record?')) {
-      try {
-        await axios.delete(`${URL}/hostaff/${hoId}`);
-        setHoData((prev) => prev.filter((ho) => ho.hoId !== hoId));
-        alert('HO staff record deleted successfully');
-      } catch (error) {
-        console.error('Error deleting HO staff record:', error);
-        alert('Failed to delete HO staff record');
-      }
+  const handleDelete = async () => {
+    if (!selectedHoId) return;
+
+    try {
+      await axios.delete(`${URL}/hostaff/${selectedHoId}`);
+      setHoData((prev) => prev.filter((item) => item.hoId !== selectedHoId));
+      enqueueSnackbar('HO record deleted successfully!', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar('Failed to delete HO record.', { variant: 'error' });
+    } finally {
+      handleCloseModal();
     }
   };
+
+  const handleOpenModal = (hoId) => {
+    setSelectedHoId(hoId);
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setSelectedHoId(null);
+  };
+
 
   const handleViewSalary = (ho) => {
     setSelectedHo(ho);
@@ -170,6 +222,8 @@ const ViewHo = () => {
     setViewSalary(false);
     setSelectedHo(null);
   };
+
+ 
 
   return (
     <TableContainer>
@@ -186,6 +240,7 @@ const ViewHo = () => {
             <DownloadButton onClick={handleDownload}>Download Excel</DownloadButton>
           </div>
           <StyledTable>
+            <table>
             <thead>
               <tr>
                 <TableHeader first>S no</TableHeader>
@@ -195,6 +250,7 @@ const ViewHo = () => {
                 <TableHeader last>Actions</TableHeader>
               </tr>
             </thead>
+            <div className="table-body">
             <tbody>
               {paginatedData.map((ho, index) => (
                 <TableRow key={ho.hoId}>
@@ -216,7 +272,7 @@ const ViewHo = () => {
                       variant="contained"
                       color="error"
                       style={{ textTransform: 'none' }}
-                      onClick={() => handleDelete(ho.hoId)}
+                      onClick={() => handleOpenModal(ho.hoId)}
                     >
                       Delete
                     </Button>
@@ -224,6 +280,8 @@ const ViewHo = () => {
                 </TableRow>
               ))}
             </tbody>
+            </div>
+            </table>
           </StyledTable>
           {filteredData.length > recordsPerPage && (
             <PaginationContainer>
@@ -281,6 +339,26 @@ const ViewHo = () => {
           </StyledTable>
         </>
       )}
+
+
+<Dialog open={openModal} onClose={handleCloseModal}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this HO record? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseModal} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+
     </TableContainer>
   );
 };

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
-import { Button } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -30,12 +31,44 @@ const FilterSelect = styled.select`
   color: white;
 `;
 
-const StyledTable = styled.table`
+const StyledTable = styled.div`
   width: 100%;
-  margin-top: 1%;
-  border-collapse: separate;
-  border-spacing: 0;
   color: white;
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    thead {
+      position: sticky;
+      top: 0;
+      background-color: #111;
+      z-index: 2;
+    }
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-top: 1px solid #555;
+    }
+  }
+
+  .table-body {
+    max-height: 400px; /* Set the desired height for the scrollable table body */
+    overflow-y: auto;
+    display: block;
+    width: 100%;
+  }
+
+  table thead tr {
+    display: table;
+    width: 100%;
+  }
+
+  table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed; /* Ensures columns are aligned */
+  }
 `;
 
 const TableHeader = styled.th`
@@ -90,11 +123,15 @@ const PaginationButton = styled.button`
 `;
 
 const ViewVip = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [month, setMonth] = useState('All');
   const [year, setYear] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedMonthYear, setSelectedMonthYear] = useState(null);
+
   const recordsPerPage = 25; // Number of records per page
 
   // Fetch data from backend
@@ -143,27 +180,46 @@ const ViewVip = () => {
     }
   };
 
-  const handleDelete = async (month, year) => {
-    const confirmDelete = window.confirm(`Are you sure you want to delete data for ${month} ${year}?`);
-    if (!confirmDelete) return;
-
+  const handleDelete = async () => {
     try {
+      const [month, year] = selectedMonthYear.split(' ');
       const response = await fetch(`${URL}/vipdata/deleteByMonthYear?month=${month}&year=${year}`, {
         method: 'DELETE',
       });
-
+  
+      const result = await response.json();
       if (response.ok) {
-        alert(`Data for ${month} ${year} deleted successfully.`);
-        setFilteredData((prevData) => prevData.filter((item) => item.monthYear !== `${month} ${year}`));
+        enqueueSnackbar(result.message, { variant: 'success' });
+        setMonth('All');
+        setYear('All'); // Reset the filters if needed
+  
+        // Directly remove the deleted record from the state
+        setData((prevData) => prevData.filter(item => item.monthYear !== selectedMonthYear));
+        setFilteredData((prevData) => prevData.filter(item => item.monthYear !== selectedMonthYear));
+        
+        // Refresh the page
+       
       } else {
-        const result = await response.json();
-        alert(`Error: ${result.message}`);
+        enqueueSnackbar(result.message, { variant: 'success' });
+        window.location.reload();
       }
     } catch (error) {
-      console.error('Error deleting data:', error);
-      alert('Failed to delete data. Please try again.');
+      enqueueSnackbar('Error deleting record', { variant: 'error' });
+    } finally {
+      closeModal();
     }
   };
+  
+  const handleOpenDialog = (monthYear) => {
+    setSelectedMonthYear(monthYear);
+    setOpenDialog(true);
+  };
+
+  const closeModal = () => {
+    setOpenDialog(false);
+    setSelectedMonthYear(null);
+  };
+
 
   return (
     <TableContainer>
@@ -200,6 +256,7 @@ const ViewVip = () => {
       </FilterContainer>
 
       <StyledTable>
+        <table>
         <thead>
           <tr>
             <TableHeader first>S No</TableHeader>
@@ -213,6 +270,7 @@ const ViewVip = () => {
             <TableHeader last>Actions</TableHeader>
           </tr>
         </thead>
+        <div className="table-body">
         <tbody>
           {paginatedData.length > 0 ? (
             paginatedData.map((item, index) => (
@@ -230,7 +288,7 @@ const ViewVip = () => {
                     variant="contained"
                     color="error"
                     style={{ textTransform: 'none' }}
-                    onClick={() => handleDelete(item.monthYear.split(' ')[0], item.monthYear.split(' ')[1])}
+                    onClick={() => handleOpenDialog(item.monthYear)}
                   >
                     Delete
                   </Button>
@@ -239,12 +297,14 @@ const ViewVip = () => {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan="7" style={{ textAlign: 'center', color: 'white' }}>
+              <TableCell colSpan="9" style={{ textAlign: 'center', color: 'white' }}>
                 No records found for the selected month and year.
               </TableCell>
             </TableRow>
           )}
         </tbody>
+        </div>
+        </table>
       </StyledTable>
 
       {totalPages > 1 && (
@@ -266,6 +326,23 @@ const ViewVip = () => {
           </PaginationButton>
         </PaginationContainer>
       )}
+
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete data for {selectedMonthYear}?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TableContainer>
   );
 };

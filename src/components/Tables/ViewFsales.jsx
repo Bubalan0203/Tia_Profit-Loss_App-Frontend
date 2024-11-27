@@ -12,13 +12,44 @@ const TableContainer = styled.div`
   width: 90%;
   margin: auto;
 `;
-
-const StyledTable = styled.table`
+const StyledTable = styled.div`
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
   color: white;
-  margin-bottom: 20px;
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    thead {
+      position: sticky;
+      top: 0;
+      background-color: #111;
+      z-index: 2;
+    }
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-top: 1px solid #555;
+    }
+  }
+
+  .table-body {
+    max-height: 400px; /* Set the desired height for the scrollable table body */
+    overflow-y: auto;
+    display: block;
+    width: 100%;
+  }
+
+  table thead tr {
+    display: table;
+    width: 100%;
+  }
+
+  table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed; /* Ensures columns are aligned */
+  }
 `;
 
 const TableHeader = styled.th`
@@ -260,6 +291,7 @@ const ViewFsales = () => {
             <HeaderText>Royalty Details for {salesData[expandedRoyaltyFranchise]?.franchiseName}</HeaderText>
             <button onClick={() => setExpandedRoyaltyFranchise(null)}>Back</button>
             <StyledTable>
+            <table>
               <thead>
                 <tr>
                   <TableHeader first>S no</TableHeader>
@@ -270,6 +302,7 @@ const ViewFsales = () => {
                   <TableHeader>Amount Pending</TableHeader>
                 </tr>
               </thead>
+              <div className="table-body">
               <tbody>
                 {salesData[expandedRoyaltyFranchise]?.financialRecords?.length > 0 ? (
                   salesData[expandedRoyaltyFranchise]?.financialRecords?.map((record, recordIndex) => (
@@ -290,6 +323,8 @@ const ViewFsales = () => {
                   </TableRow>
                 )}
               </tbody>
+              </div>
+              </table>
             </StyledTable>
           </>
         ): expandedFranchise === null ? (
@@ -304,6 +339,7 @@ const ViewFsales = () => {
         />
       </div>
           <StyledTable>
+            <table>
             <thead>
               <tr>
                 <TableHeader first>S no</TableHeader>
@@ -315,6 +351,7 @@ const ViewFsales = () => {
                 <TableHeader last>View Royalty</TableHeader>
               </tr>
             </thead>
+            <div className="table-body">
             <tbody>
             {paginatedData.length > 0 ? (
          paginatedData.map((franchise, index) => {
@@ -358,6 +395,8 @@ const ViewFsales = () => {
 )}
 
             </tbody>
+            </div>
+            </table>
           </StyledTable>
           {filteredData.length > recordsPerPage && (
             <PaginationContainer>
@@ -426,6 +465,7 @@ const ViewFsales = () => {
 
 
               <StyledTable>
+                <table>
                 <thead>
                   <tr>
                     <TableHeader first>S no</TableHeader>
@@ -439,6 +479,7 @@ const ViewFsales = () => {
                     <TableHeader last>View Stats</TableHeader>
                   </tr>
                 </thead>
+                <div className="table-body">
                 <tbody>
                   {filteredProducts.map((product, productIndex) => (
                     <TableRow key={`${salesData[expandedFranchise]?._id}-${productIndex}`}>
@@ -458,6 +499,8 @@ const ViewFsales = () => {
                     </TableRow>
                   ))}
                 </tbody>
+                </div>
+                </table>
               </StyledTable>
             </>
         ) : (
@@ -465,6 +508,7 @@ const ViewFsales = () => {
             <button onClick={handleBackToProductsClick}>Back </button>
     
             <StyledTable>
+              <table>
                 <thead>
                   <tr>
                     <TableHeader first>S no</TableHeader>
@@ -473,6 +517,7 @@ const ViewFsales = () => {
                     <TableHeader last>Payment</TableHeader>
                   </tr>
                 </thead>
+                <div className="table-body">
                 <tbody>
                   {salesData[expandedFranchise]?.products[expandedProductIndex]?.payments?.map((payment, paymentIndex) => {
                     const formattedDate = format(new Date(payment.date), 'dd/MM/yyyy');
@@ -487,6 +532,8 @@ const ViewFsales = () => {
                     );
                   })}
                 </tbody>
+                </div>
+                </table>
               </StyledTable>
           </>
         )}

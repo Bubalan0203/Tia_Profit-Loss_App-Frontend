@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
-import { Button } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -30,13 +31,46 @@ const FilterSelect = styled.select`
   color: white;
 `;
 
-const StyledTable = styled.table`
+const StyledTable = styled.div`
   width: 100%;
-  margin-top: 1%;
-  border-collapse: separate;
-  border-spacing: 0;
   color: white;
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    thead {
+      position: sticky;
+      top: 0;
+      background-color: #111;
+      z-index: 2;
+    }
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-top: 1px solid #555;
+    }
+  }
+
+  .table-body {
+    max-height: 400px; /* Set the desired height for the scrollable table body */
+    overflow-y: auto;
+    display: block;
+    width: 100%;
+  }
+
+  table thead tr {
+    display: table;
+    width: 100%;
+  }
+
+  table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed; /* Ensures columns are aligned */
+  }
 `;
+
 
 const TableHeader = styled.th`
   background-color: #111;
@@ -98,6 +132,10 @@ const ViewVip = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 25; // Change as needed
 
+  const { enqueueSnackbar } = useSnackbar(); // Snackbar instance
+  const [modalOpen, setModalOpen] = useState(false); // Modal state
+  const [selectedMonthYear, setSelectedMonthYear] = useState(null); // Record to delete
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -127,26 +165,43 @@ const ViewVip = () => {
     setCurrentPage(1); // Reset to first page on filter change
   }, [month, year, data]);
 
-  const handleDelete = async (monthYear) => {
+  const openModal = (monthYear) => {
+    setSelectedMonthYear(monthYear);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedMonthYear(null);
+  };
+
+  const confirmDelete = async () => {
     try {
-      const [month, year] = monthYear.split(' ');
+      const [month, year] = selectedMonthYear.split(' ');
       const response = await fetch(`${URL}/vipfranchiseupload/deleteRecord?month=${month}&year=${year}`, {
         method: 'DELETE',
       });
-
+  
       const result = await response.json();
       if (response.ok) {
-        alert(result.message);
+        enqueueSnackbar(result.message, { variant: 'success' });
         setMonth('All');
-        setYear('All');
+        setYear('All'); // Refresh the current view if needed
+  
+        // Directly remove the deleted record from the state
+        setData((prevData) => prevData.filter(item => item.monthYear !== selectedMonthYear));
+        setFilteredData((prevData) => prevData.filter(item => item.monthYear !== selectedMonthYear));
       } else {
-        alert(result.message || 'Error deleting record');
+        enqueueSnackbar(result.message || 'Error deleting record', { variant: 'error' });
       }
     } catch (error) {
-      alert('Error deleting record');
+      enqueueSnackbar('Error deleting record', { variant: 'error' });
+    } finally {
+      closeModal();
     }
   };
-
+  
+  
   const startIndex = (currentPage - 1) * recordsPerPage;
   const endIndex = startIndex + recordsPerPage;
   const currentRecords = filteredData.slice(startIndex, endIndex);
@@ -173,6 +228,7 @@ const ViewVip = () => {
       </FilterContainer>
 
       <StyledTable>
+        <table>
         <thead>
           <tr>
             <TableHeader first>S no</TableHeader>
@@ -185,6 +241,7 @@ const ViewVip = () => {
             <TableHeader last>Actions</TableHeader>
           </tr>
         </thead>
+        <div className="table-body">
         <tbody>
           {currentRecords.length > 0 ? (
             currentRecords.map((item, index) => (
@@ -197,7 +254,12 @@ const ViewVip = () => {
                 <TableCell>{item.totals.paymentPaid}</TableCell>
                 <TableCell>{item.totals.paymentPending}</TableCell>
                 <TableCell>
-                  <Button variant="contained" color="error" style={{ textTransform: 'none' }} onClick={() => handleDelete(item.monthYear)}>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    style={{ textTransform: 'none' }}
+                    onClick={() => openModal(item.monthYear)}
+                  >
                     Delete
                   </Button>
                 </TableCell>
@@ -205,12 +267,14 @@ const ViewVip = () => {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan="7" style={{ textAlign: 'center', color: 'white' }}>
+              <TableCell colSpan="8" style={{ textAlign: 'center', color: 'white' }}>
                 No records found for the selected month and year.
               </TableCell>
             </TableRow>
           )}
         </tbody>
+        </div>
+        </table>
       </StyledTable>
 
       <PaginationContainer>
@@ -226,6 +290,24 @@ const ViewVip = () => {
           Next
         </PaginationButton>
       </PaginationContainer>
+
+      {/* Modal for Delete Confirmation */}
+      <Dialog open={modalOpen} onClose={closeModal}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete the record for <strong>{selectedMonthYear}</strong>?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeModal} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={confirmDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TableContainer>
   );
 };

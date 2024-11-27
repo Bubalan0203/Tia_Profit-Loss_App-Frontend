@@ -3,7 +3,8 @@ import styled from 'styled-components';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { URL } from '../../assests/mocData/config';
-import { Button } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 const TableContainer = styled.div`
   padding: 20px;
@@ -13,12 +14,46 @@ const TableContainer = styled.div`
   top: 5%;
 `;
 
-const StyledTable = styled.table`
+const StyledTable = styled.div`
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
   color: white;
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    thead {
+      position: sticky;
+      top: 0;
+      background-color: #111;
+      z-index: 2;
+    }
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-top: 1px solid #555;
+    }
+  }
+
+  .table-body {
+    max-height: 400px; /* Set the desired height for the scrollable table body */
+    overflow-y: auto;
+    display: block;
+    width: 100%;
+  }
+
+  table thead tr {
+    display: table;
+    width: 100%;
+  }
+
+  table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed; /* Ensures columns are aligned */
+  }
 `;
+
 
 const TableHeader = styled.th`
   background-color: #111;
@@ -57,7 +92,6 @@ const SearchInput = styled.input`
   margin-bottom: 20px;
   border-radius: 5px;
   border: 1px solid #ccc;
-  
 `;
 
 const DownloadButton = styled.button`
@@ -67,8 +101,8 @@ const DownloadButton = styled.button`
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  position:absolute;
-  right:10%;
+  position: absolute;
+  right: 10%;
 `;
 
 const NoRecordsFound = styled.tr`
@@ -105,73 +139,80 @@ const ViewFranchise = () => {
   const [searchText, setSearchText] = useState('');
   const [filteredData, setFilteredData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedFranchiseId, setSelectedFranchiseId] = useState(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const recordsPerPage = 25;
 
   useEffect(() => {
     const fetchFranchiseData = async () => {
       try {
-        const response = await axios.get(`${URL}/franchise`); // Update with your backend API URL
+        const response = await axios.get(`${URL}/franchise`);
         setFranchiseData(response.data);
         setFilteredData(response.data);
       } catch (error) {
-        console.error("Error fetching franchise data:", error);
+        console.error('Error fetching franchise data:', error);
       }
     };
 
     fetchFranchiseData();
   }, []);
 
-  // Filter data based on the search query
   useEffect(() => {
-    const filtered = franchiseData.filter((franchise) =>
-      franchise.franchiseName.toLowerCase().includes(searchText.toLowerCase()) ||
-      franchise.franchiseId.toLowerCase().includes(searchText.toLowerCase()) ||
-      franchise.branchName.toLowerCase().includes(searchText.toLowerCase())
+    const filtered = franchiseData.filter(
+      (franchise) =>
+        franchise.franchiseName.toLowerCase().includes(searchText.toLowerCase()) ||
+        franchise.franchiseId.toLowerCase().includes(searchText.toLowerCase()) ||
+        franchise.branchName.toLowerCase().includes(searchText.toLowerCase())
     );
     setFilteredData(filtered);
-    setCurrentPage(1); // Reset to the first page on search
+    setCurrentPage(1);
   }, [searchText, franchiseData]);
 
-  // Get paginated data
   const paginatedData = filteredData.slice(
     (currentPage - 1) * recordsPerPage,
     currentPage * recordsPerPage
   );
 
-  // Handle Excel download
   const handleDownload = () => {
-    // Map data to include custom headers
     const exportData = franchiseData.map((franchise, index) => ({
-      "S No": index + 1,
-      "Franchise Name": franchise.franchiseName,
-      "Franchise ID": franchise.franchiseId,
-      "Branch Name": franchise.branchName,
-      
+      'S No': index + 1,
+      'Franchise Name': franchise.franchiseName,
+      'Franchise ID': franchise.franchiseId,
+      'Branch Name': franchise.branchName,
     }));
-  
+
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'FranchiseData');
     XLSX.writeFile(workbook, 'FranchiseData.xlsx');
   };
-  
-  // Pagination handlers
-  const totalPages = Math.ceil(filteredData.length / recordsPerPage);
 
-
-  const handleDelete = async (franchiseId) => {
-    if (window.confirm('Are you sure you want to delete this franchise?')) {
-      try {
-        await axios.delete(`${URL}/franchise/${franchiseId}`); // API call to delete franchise
-        setFranchiseData((prev) => prev.filter((item) => item.franchiseId !== franchiseId));
-        setFilteredData((prev) => prev.filter((item) => item.franchiseId !== franchiseId));
-      } catch (error) {
-        console.error('Error deleting franchise:', error);
-      }
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`${URL}/franchise/${selectedFranchiseId}`);
+      setFranchiseData((prev) => prev.filter((item) => item.franchiseId !== selectedFranchiseId));
+      setFilteredData((prev) => prev.filter((item) => item.franchiseId !== selectedFranchiseId));
+      enqueueSnackbar('Franchise deleted successfully!', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar('Failed to delete franchise.', { variant: 'error' });
+      console.error('Error deleting franchise:', error);
+    } finally {
+      setOpenModal(false);
+      setSelectedFranchiseId(null);
     }
   };
-  
+
+  const handleOpenModal = (franchiseId) => {
+    setSelectedFranchiseId(franchiseId);
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setSelectedFranchiseId(null);
+  };
 
   return (
     <TableContainer>
@@ -180,7 +221,7 @@ const ViewFranchise = () => {
       <div>
         <SearchInput
           type="text"
-          placeholder="Search "
+          placeholder="Search"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
         />
@@ -188,19 +229,21 @@ const ViewFranchise = () => {
       </div>
 
       <StyledTable>
+        <table>
         <thead>
           <tr>
-            <TableHeader first>S no</TableHeader>
+            <TableHeader first>S No</TableHeader>
             <TableHeader>Franchise Name</TableHeader>
-            <TableHeader>Franchise ID</TableHeader>
+            <TableHeader>Franchise Email</TableHeader>
             <TableHeader>Branch Name</TableHeader>
             <TableHeader last>Actions</TableHeader>
           </tr>
         </thead>
+        <div className="table-body">
         <tbody>
           {paginatedData.length > 0 ? (
             paginatedData.map((franchise, index) => (
-              <TableRow key={franchise.id}>
+              <TableRow key={franchise.franchiseId}>
                 <TableCell>
                   {(currentPage - 1) * recordsPerPage + index + 1}
                 </TableCell>
@@ -208,15 +251,15 @@ const ViewFranchise = () => {
                 <TableCell>{franchise.franchiseId}</TableCell>
                 <TableCell>{franchise.branchName}</TableCell>
                 <TableCell>
-  <Button 
-   variant="contained"
-   color="error"
-   style={{ textTransform: 'none' }}
-   onClick={() => handleDelete(franchise.franchiseId)}>
-    Delete</Button>
-  
-</TableCell>
-
+                  <Button
+                    variant="contained"
+                    color="error"
+                    style={{ textTransform: 'none' }}
+                    onClick={() => handleOpenModal(franchise.franchiseId)}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
               </TableRow>
             ))
           ) : (
@@ -225,6 +268,8 @@ const ViewFranchise = () => {
             </NoRecordsFound>
           )}
         </tbody>
+        </div>
+        </table>
       </StyledTable>
 
       {filteredData.length > recordsPerPage && (
@@ -235,7 +280,7 @@ const ViewFranchise = () => {
           >
             Previous
           </PaginationButton>
-          {[...Array(totalPages)].map((_, index) => (
+          {[...Array(Math.ceil(filteredData.length / recordsPerPage))].map((_, index) => (
             <PaginationButton
               key={index}
               onClick={() => setCurrentPage(index + 1)}
@@ -246,12 +291,30 @@ const ViewFranchise = () => {
           ))}
           <PaginationButton
             onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={currentPage === totalPages}
+            disabled={currentPage === Math.ceil(filteredData.length / recordsPerPage)}
           >
             Next
           </PaginationButton>
         </PaginationContainer>
       )}
+
+      {/* Modal for Delete Confirmation */}
+      <Dialog open={openModal} onClose={handleCloseModal}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this franchise? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseModal} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TableContainer>
   );
 };

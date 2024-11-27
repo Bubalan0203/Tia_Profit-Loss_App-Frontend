@@ -297,7 +297,7 @@ const ButtonCancelC = styled.button`
 
 const Confirmation = styled.div`
   padding: 20px;
-  background-color: #fff3cd;
+  background-color: #000;
   border: 1px solid #ffecb3;
   border-radius: 5px;
   text-align: center;
@@ -317,15 +317,15 @@ const ButtonConfirm = styled.button`
 `;
 
 const ButtonCancel = styled.button`
-  background-color: #ccc;
-  padding: 10px 20px;
+  background-color: #f00d88;
+  padding: 1px 10px;
   border: none;
   border-radius: 5px;
   margin: 10px;
   color: white;
 
   &:hover {
-    background-color: #999;
+    background-color:red;
   }
 `;
 
