@@ -314,6 +314,7 @@ const ViewHo = () => {
           <BackButton onClick={handleBack}>Back</BackButton>
           <HeaderText>Salary Details for {selectedHo.hoName}</HeaderText>
           <StyledTable>
+          <table>
             <thead>
               <tr>
                 <TableHeader first>S no</TableHeader>
@@ -323,6 +324,7 @@ const ViewHo = () => {
                 <TableHeader last>Total</TableHeader>
               </tr>
             </thead>
+            <div className="table-body">
             <tbody>
               {selectedHo.salary.map((record, index) => (
                 <TableRow key={index}>
@@ -336,6 +338,8 @@ const ViewHo = () => {
                 </TableRow>
               ))}
             </tbody>
+            </div>
+            </table>
           </StyledTable>
         </>
       )}

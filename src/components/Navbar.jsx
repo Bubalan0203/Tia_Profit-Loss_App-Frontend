@@ -173,18 +173,6 @@ function NavBar({ selected, user }) {
                 anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
               >
                 <Divider />
-                <MenuItem onClick={handleChangePassword}>
-                  <ListItemIcon>
-                    <Lock fontSize="small" sx={{ color: "pink" }} />
-                  </ListItemIcon>
-                  Change Password
-                </MenuItem>
-                <MenuItem onClick={() => navigate("/settings")}>
-                  <ListItemIcon>
-                    <Settings fontSize="small" sx={{ color: "pink" }} />
-                  </ListItemIcon>
-                  Settings
-                </MenuItem>
                 <MenuItem onClick={LogOutUser}>
                   <ListItemIcon>
                     <Logout fontSize="small" sx={{ color: "pink" }} />

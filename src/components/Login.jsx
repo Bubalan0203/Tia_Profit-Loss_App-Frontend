@@ -152,22 +152,7 @@ const Login = () => {
                                 <Icon className="absolute mr-10" icon={icon} size={20} />
                             </span>
                         </div>
-                        <div className="checkbox-container">
-                            <label1 className="checkbox-label">
-                                <input
-                                    style={{ "accent-color": "red" }}
-                                    checked={rememberMe}
-                                    onClick={() => setRememberMe(!rememberMe)}
-                                    type="checkbox"
-                                    name=""
-                                    id=""
-                                />
-                                Remember me
-                            </label1>
-                            <div className="forget-password" onClick={handleForgetPassword}>
-                                Forget Your password?
-                            </div>
-                        </div>
+                       
                         <button className="login-button" onClick={() => handleSubmit()}>
                             Login
                         </button>
