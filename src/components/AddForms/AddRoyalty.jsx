@@ -1,18 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
-import * as XLSX from 'xlsx';  // Import XLSX for reading Excel files
+import * as XLSX from 'xlsx';
 import styled from 'styled-components';
 import { URL } from '../../assests/mocData/config';
 import { useSnackbar } from 'notistack';
 
 const FinancialUploader = () => {
-  const { enqueueSnackbar } = useSnackbar(); // Snackbar hook
+  const { enqueueSnackbar } = useSnackbar();
   const [file, setFile] = useState(null);
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
   const [tableData, setTableData] = useState([]);
   const [duplicateRecords, setDuplicateRecords] = useState([]);
   const [replacementInProgress, setReplacementInProgress] = useState(false);
+
+  const fileInputRef = useRef(); // Ref for file input
+
+  const calculateTotals = (data) => {
+    return data.reduce(
+      (totals, row) => ({
+        RoyaltyAmount: totals.RoyaltyAmount + parseFloat(row.RoyaltyAmount || 0),
+        AmountPaid: totals.AmountPaid + parseFloat(row.AmountPaid || 0),
+        AmountPending: totals.AmountPending + parseFloat(row.AmountPending || 0),
+      }),
+      { RoyaltyAmount: 0, AmountPaid: 0, AmountPending: 0 }
+    );
+  };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -27,14 +40,13 @@ const FinancialUploader = () => {
         const data = XLSX.utils.sheet_to_json(sheet);
 
         const filteredData = data.map((row) => ({
-          FranchiseID: row.FranchiseID,
+          Email: row.Email,
           RoyaltyAmount: row.RoyaltyAmount,
           AmountPaid: row.AmountPaid,
           AmountPending: row.AmountPending,
         }));
 
         setTableData(filteredData);
-        enqueueSnackbar('File uploaded and parsed successfully!', { variant: 'success' });
       };
       reader.readAsArrayBuffer(selectedFile);
     }
@@ -58,7 +70,7 @@ const FinancialUploader = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       enqueueSnackbar(response.data.message, { variant: 'success' });
-      setDuplicateRecords([]);
+      resetForm();
     } catch (error) {
       if (error.response?.status === 409) {
         const duplicateRecords = error.response.data.duplicateRecords;
@@ -86,7 +98,7 @@ const FinancialUploader = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       enqueueSnackbar(response.data.message, { variant: 'success' });
-      setDuplicateRecords([]);
+      resetForm();
     } catch (error) {
       enqueueSnackbar(error.response?.data?.error || 'Error occurred while replacing.', {
         variant: 'error',
@@ -102,8 +114,12 @@ const FinancialUploader = () => {
     setYear('');
     setTableData([]);
     setDuplicateRecords([]);
-    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''; // Reset file input value
+    }
   };
+
+  const totals = calculateTotals(tableData);
 
   return (
     <Container>
@@ -131,12 +147,18 @@ const FinancialUploader = () => {
 
         <Dropdown>
           <Label>Upload File:</Label>
-          <InputFile type="file" accept=".xlsx, .xls" onChange={handleFileChange} required />
+          <InputFile
+            type="file"
+            accept=".xlsx, .xls"
+            onChange={handleFileChange}
+            ref={fileInputRef} // Attach ref to file input
+            required
+          />
         </Dropdown>
 
         <ButtonContainer>
           <Button type="submit">Upload</Button>
-          <Button type="button" onClick={resetForm}>Cancel</Button> {/* Reset Button */}
+          <Button type="button" onClick={resetForm}>Cancel</Button>
         </ButtonContainer>
       </Form>
 
@@ -146,21 +168,17 @@ const FinancialUploader = () => {
           <Table>
             <thead>
               <tr>
-                <th>Franchise ID</th>
                 <th>Royalty Amount</th>
                 <th>Amount Paid</th>
                 <th>Amount Pending</th>
               </tr>
             </thead>
             <tbody>
-              {tableData.map((row, index) => (
-                <tr key={index}>
-                  <td>{row.FranchiseID}</td>
-                  <td>{row.RoyaltyAmount}</td>
-                  <td>{row.AmountPaid}</td>
-                  <td>{row.AmountPending}</td>
-                </tr>
-              ))}
+              <tr>
+                <td><strong>{totals.RoyaltyAmount}</strong></td>
+                <td><strong>{totals.AmountPaid}</strong></td>
+                <td><strong>{totals.AmountPending}</strong></td>
+              </tr>
             </tbody>
           </Table>
         </TableContainer>
@@ -169,12 +187,7 @@ const FinancialUploader = () => {
       {duplicateRecords.length > 0 && (
         <DuplicateContainer>
           <h3>Duplicate Records Found</h3>
-          <p>Records already exist for the following Franchise IDs:</p>
-          <ul>
-            {duplicateRecords.map((rec, index) => (
-              <li key={index}>Franchise ID: {rec.FranchiseID}</li>
-            ))}
-          </ul>
+          <p>Records already exists</p>
           <ReplaceButton
             onClick={handleReplaceDuplicates}
             disabled={replacementInProgress}
@@ -188,6 +201,7 @@ const FinancialUploader = () => {
 };
 
 export default FinancialUploader;
+
 // Styled Components
 const Container = styled.div`
   max-width: 810px;
@@ -304,7 +318,7 @@ const Table = styled.table`
 const DuplicateContainer = styled.div`
   margin-top: 30px;
   padding: 15px;
-  background-color: #f9e0e0;
+  background-color: #000;
   border-radius: 5px;
 `;
 
