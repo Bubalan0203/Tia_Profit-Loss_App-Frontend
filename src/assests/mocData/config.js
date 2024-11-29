@@ -1,1 +1,1 @@
-export let URL=`https://headoffice.tiaedu.in/`;
+export let URL=`https://headoffice.tiaedu.in/api`;
