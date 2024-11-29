@@ -4,12 +4,7 @@ import { URL } from '../../assests/mocData/config';
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
-const TableContainer = styled.div`
-  padding: 20px;
-  border-radius: 10px;
-  width: 90%;
-  margin: auto;
-`;
+
 
 const FilterContainer = styled.div`
   display: flex;
@@ -31,57 +26,65 @@ const FilterSelect = styled.select`
   color: white;
 `;
 
+
+
+const TableContainer = styled.div`
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  margin: auto;
+  top: 5%;
+`;
+
 const StyledTable = styled.div`
   width: 100%;
   color: white;
+  
 
   table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    thead {
-      position: sticky;
-      top: 0;
-      background-color: #111;
-      z-index: 2;
-    }
-    th, td {
-      padding: 15px;
-      text-align: left;
-      border-top: 1px solid #555;
-    }
-  }
-
-  .table-body {
-    max-height: 400px; /* Set the desired height for the scrollable table body */
+    
+    border-collapse: collapse;
+    table-layout: fixed;
+     max-height: 400px;
     overflow-y: auto;
     display: block;
-    width: 100%;
+
+    th:nth-child(1), td:nth-child(1) {
+      width: 10%; /* Adjust width for the first column */
+    }
+
+    th:nth-child(2), td:nth-child(2) {
+      width: 30%; /* Adjust width for the second column */
+    }
+
+    th:nth-child(3), td:nth-child(3) {
+      width: 20%; /* Adjust width for the third column */
+    }
+
+    th:nth-child(4), td:nth-child(4) {
+      width: 30%; /* Adjust width for the fourth column */
+    }
+
+    th:nth-child(5), td:nth-child(5) {
+      width: 10%; /* Adjust width for the last column */
+    }
   }
 
-  table thead tr {
-    display: table;
-    width: 100%;
-  }
-
-  table tbody tr {
-    display: table;
-    width: 100%;
-    table-layout: fixed; /* Ensures columns are aligned */
-  }
+  
 `;
 
 const TableHeader = styled.th`
   background-color: #111;
   color: #f0f0f0;
-  padding: 15px;
-  text-align: left;
+  padding:15px;
   font-weight: bold;
   border-top-left-radius: ${(props) => (props.first ? '10px' : '0')};
   border-top-right-radius: ${(props) => (props.last ? '10px' : '0')};
 `;
 
 const TableRow = styled.tr`
+
   &:nth-child(even) {
     background-color: #444;
   }
@@ -91,9 +94,8 @@ const TableRow = styled.tr`
 `;
 
 const TableCell = styled.td`
-  padding: 15px;
-  text-align: left;
-  border-top: 1px solid #555;
+padding:15px;
+  text-align: center; /* Ensures table cell content is centered */
 `;
 
 const HeaderText = styled.h2`
@@ -270,7 +272,7 @@ const ViewVip = () => {
             <TableHeader last>Actions</TableHeader>
           </tr>
         </thead>
-        <div className="table-body">
+       
         <tbody>
           {paginatedData.length > 0 ? (
             paginatedData.map((item, index) => (
@@ -303,7 +305,7 @@ const ViewVip = () => {
             </TableRow>
           )}
         </tbody>
-        </div>
+     
         </table>
       </StyledTable>
 
