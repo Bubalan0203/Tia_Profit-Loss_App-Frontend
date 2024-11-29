@@ -87,6 +87,7 @@ const TableContainer = styled.div`
   width: 90%;
   margin: auto;
   top: 5%;
+  margin-top:0;
 `;
 
 const StyledTable = styled.div`

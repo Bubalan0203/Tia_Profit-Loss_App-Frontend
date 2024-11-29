@@ -11,58 +11,58 @@ const TableContainer = styled.div`
   border-radius: 10px;
   width: 90%;
   margin: auto;
+  top: 5%;
 `;
+
 const StyledTable = styled.div`
   width: 100%;
   color: white;
+  
 
   table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    thead {
-      position: sticky;
-      top: 0;
-      background-color: #111;
-      z-index: 2;
-    }
-    th, td {
-      padding: 15px;
-      text-align: left;
-      border-top: 1px solid #555;
-    }
-  }
-
-  .table-body {
-    max-height: 400px; /* Set the desired height for the scrollable table body */
+    
+    border-collapse: collapse;
+    table-layout: fixed;
+     max-height: 400px;
     overflow-y: auto;
     display: block;
-    width: 100%;
+
+    th:nth-child(1), td:nth-child(1) {
+      width: 10%; /* Adjust width for the first column */
+    }
+
+    th:nth-child(2), td:nth-child(2) {
+      width: 30%; /* Adjust width for the second column */
+    }
+
+    th:nth-child(3), td:nth-child(3) {
+      width: 20%; /* Adjust width for the third column */
+    }
+
+    th:nth-child(4), td:nth-child(4) {
+      width: 30%; /* Adjust width for the fourth column */
+    }
+
+    th:nth-child(5), td:nth-child(5) {
+      width: 10%; /* Adjust width for the last column */
+    }
   }
 
-  table thead tr {
-    display: table;
-    width: 100%;
-  }
-
-  table tbody tr {
-    display: table;
-    width: 100%;
-    table-layout: fixed; /* Ensures columns are aligned */
-  }
+  
 `;
 
 const TableHeader = styled.th`
   background-color: #111;
   color: #f0f0f0;
-  padding: 15px;
-  text-align: left;
+  padding:15px;
   font-weight: bold;
   border-top-left-radius: ${(props) => (props.first ? '10px' : '0')};
   border-top-right-radius: ${(props) => (props.last ? '10px' : '0')};
 `;
 
 const TableRow = styled.tr`
+
   &:nth-child(even) {
     background-color: #444;
   }
@@ -72,10 +72,10 @@ const TableRow = styled.tr`
 `;
 
 const TableCell = styled.td`
-  padding: 15px;
-  text-align: left;
-  border-top: 1px solid #555;
+padding:15px;
+  text-align: center; /* Ensures table cell content is centered */
 `;
+
 
 const HeaderText = styled.h2`
   color: white;
@@ -121,29 +121,59 @@ const PaginationButton = styled.button`
     cursor: not-allowed;
   }
 `;
+const FilterContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-left: 75%;
+  margin-bottom:2%;
 
-const ViewFranchise = () => {
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+  }
+`;
+
+const FilterSelect = styled.select`
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #311c31;
+  color: white;
+`;
+
+const ViewSales = () => {
   const [salesData, setSalesData] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [filteredData, setFilteredData] = useState([]);
+  const [month, setMonth] = useState('All');
+  const [year, setYear] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [openModal, setOpenModal] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
-  const { enqueueSnackbar } = useSnackbar(); // Notistack hook
+  const { enqueueSnackbar } = useSnackbar();
 
   const recordsPerPage = 25;
 
-  useEffect(() => {
+  const fetchSalesData = () => {
+    const params = new URLSearchParams();
+    if (month !== 'All') params.append('month', month);
+    if (year !== 'All') params.append('year', year);
+
     axios
-      .get(`${URL}/sales`)
+      .get(`${URL}/sales?${params.toString()}`)
       .then((response) => {
         setSalesData(response.data);
       })
       .catch((error) => {
         console.error('Error fetching sales data:', error);
       });
-  }, []);
+  };
+
+  useEffect(() => {
+    fetchSalesData();
+  }, [month, year]);
 
   useEffect(() => {
     const filtered = salesData.filter((sale) =>
@@ -200,7 +230,7 @@ const ViewFranchise = () => {
 
   return (
     <TableContainer>
-      <HeaderText>View Sales</HeaderText>
+      <HeaderText>View Expense</HeaderText>
       <div>
         <SearchInput
           type="text"
@@ -210,6 +240,38 @@ const ViewFranchise = () => {
         />
         <DownloadButton onClick={handleDownload}>Download Excel</DownloadButton>
       </div>
+      <FilterContainer>
+        <FilterSelect value={month} onChange={(e) => setMonth(e.target.value)}>
+          {[
+            'All',
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
+          ].map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </FilterSelect>
+
+        <FilterSelect value={year} onChange={(e) => setYear(e.target.value)}>
+          {['All', 2024, 2023, 2022, 2021, 2020].map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </FilterSelect>
+      </FilterContainer>
+
       <StyledTable>
         <table>
           <thead>
@@ -223,40 +285,38 @@ const ViewFranchise = () => {
               <TableHeader last>Actions</TableHeader>
             </tr>
           </thead>
-          <div className="table-body">
-            <tbody>
-              {paginatedData.length > 0 ? (
-                paginatedData.map((sale, index) => (
-                  <TableRow key={sale._id}>
-                    <TableCell>
-                      {(currentPage - 1) * recordsPerPage + index + 1}
-                    </TableCell>
-                    <TableCell>{sale.productName}</TableCell>
-                    <TableCell>{sale.description}</TableCell>
-                    <TableCell>{sale.price}</TableCell>
-                    <TableCell>{sale.count}</TableCell>
-                    <TableCell>{sale.total}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="contained"
-                        color="error"
-                        style={{ textTransform: 'none' }}
-                        onClick={() => openConfirmationModal(sale._id)}
-                      >
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', color: 'white' }}>
-                    No Records Found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </div>
+          <tbody>
+            {paginatedData.length > 0 ? (
+              paginatedData.map((sale, index) => (
+                <TableRow key={sale._id}>
+                  <TableCell>
+                    {(currentPage - 1) * recordsPerPage + index + 1}
+                  </TableCell>
+                  <TableCell>{sale.productName}</TableCell>
+                  <TableCell>{sale.description}</TableCell>
+                  <TableCell>{sale.price}</TableCell>
+                  <TableCell>{sale.count}</TableCell>
+                  <TableCell>{sale.total}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      style={{ textTransform: 'none' }}
+                      onClick={() => openConfirmationModal(sale._id)}
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="7" style={{ textAlign: 'center', color: 'white' }}>
+                  No Records Found
+                </td>
+              </tr>
+            )}
+          </tbody>
         </table>
       </StyledTable>
       {filteredData.length > recordsPerPage && (
@@ -310,4 +370,5 @@ const ViewFranchise = () => {
   );
 };
 
-export default ViewFranchise;
+
+export default ViewSales;

@@ -10,6 +10,7 @@ const FilterContainer = styled.div`
   display: flex;
   gap: 1rem;
   margin-left: 75%;
+  margin-bottom:2%;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -141,22 +142,31 @@ const ViewVip = () => {
     const fetchData = async () => {
       try {
         const response = await fetch(`${URL}/vipdata/checkRecord?month=${month}&year=${year}`);
+        
+        // Check if the response is OK
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+  
+        // Parse the JSON response
         const result = await response.json();
-
-        if (Array.isArray(result)) {
-          setData(result);
+  
+        // Check if the result is an object and contains the 'records' field
+        if (result && Array.isArray(result.records)) {
+          setData(result.records);
         } else {
           console.error('Unexpected response format:', result);
-          setData([]);
+          setData([]);  // Handle unexpected response by setting an empty array
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-        setData([]);
+        setData([]);  // Handle errors by setting an empty array
       }
     };
-
+  
     fetchData();
-  }, [month, year]);
+  }, [month, year]);  // Dependency array to re-run on month or year change
+  
 
   // Filter data based on month and year
   useEffect(() => {

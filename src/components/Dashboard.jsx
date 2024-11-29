@@ -506,6 +506,142 @@ useEffect(() => {
         </FilterContainer>
       </DashboardHeadingContainer>
 
+      <DashboardHeading>P & L Stats</DashboardHeading>
+  <StatsSection>  
+  <StatCard>
+    <StatLabel>Total  Income</StatLabel>
+    <StatValue>₹{totalIncome}</StatValue>
+  </StatCard>
+  <StatCard>
+    <StatLabel>Total  Expense</StatLabel>
+    <StatValue>₹{totalExpenses}</StatValue>
+  </StatCard>
+</StatsSection>
+
+      <GraphSection>
+        <GraphItem>
+          <GraphTitle>P & L </GraphTitle>
+          <ChartContainer>
+  <Doughnut
+    data={{
+      labels: ["Total Income", "Total Expenses"],
+      datasets: [
+        {
+          data: [totalIncome, totalExpenses], // Use dynamic data
+          backgroundColor: ["#4CAF50", "#F44336"], // Colors for each segment
+          hoverBackgroundColor: [ "#81C784","#E57373"], // Colors on hover
+        },
+      ],
+    }}
+    options={{
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "top", // Adjust the legend position
+        },
+      },
+    }}
+  />
+</ChartContainer>
+        </GraphItem>
+
+    
+
+<GraphItem>
+  <GraphTitle>INCOME</GraphTitle>
+  <ChartContainer>
+    <Bar
+      data={{
+        labels: ["Company Buisness", "Franchise Sales", "Other Sales"], // Labels for each bar
+        datasets: [
+          {
+            label: "Profit Data", // Dataset label
+            data: [CompanyDataTotals.paymentPaid, totalPaymentPaid, totalSale], // Dynamic data values
+            backgroundColor: ["#4CAF50", "#4CAF50", "#4CAF50"], // Colors for bars
+            hoverBackgroundColor: ["#81C784", "#81C784", "#81C784"], // Hover colors
+          },
+        ],
+      }}
+      options={{
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false, // Legend is hidden since there's one dataset
+          },
+          tooltip: {
+            enabled: true, // Tooltips enabled for better interaction
+          },
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false, // Remove gridlines for a cleaner x-axis
+            },
+          },
+          y: {
+            beginAtZero: true, // Ensure y-axis starts from 0
+            ticks: {
+              precision: 0, // Avoid decimals if the values are integers
+            },
+          },
+        },
+      }}
+    />
+  </ChartContainer>
+</GraphItem>
+
+
+<GraphItem>
+  <GraphTitle>EXPENSE</GraphTitle>
+  <ChartContainer>
+    <Bar
+      data={{
+        labels: ["Vip Buisness", "Vip Franchise Buisness", "Other Expense","Ho Salary"], // Labels for each bar
+        datasets: [
+          {
+            label: "Profit Data", // Dataset label
+            data: [totals.paymentPaid,vipFranchiseTotals.paymentPaid,othExpenses,hosalaryExpenses], // Dynamic data values
+            backgroundColor: ["#F44336", "#F44336", "#F44336"], // Colors for bars
+            hoverBackgroundColor: ["#E57373", "#E57373", "#E57373"], // Hover colors
+          },
+        ],
+      }}
+      options={{
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false, // Legend is hidden since there's one dataset
+          },
+          tooltip: {
+            enabled: true, // Tooltips enabled for better interaction
+          },
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false, // Remove gridlines for a cleaner x-axis
+            },
+          },
+          y: {
+            beginAtZero: true, // Ensure y-axis starts from 0
+            ticks: {
+              precision: 0, // Avoid decimals if the values are integers
+            },
+          },
+        },
+      }}
+    />
+  </ChartContainer>
+</GraphItem>;
+
+        
+      </GraphSection>
+
+
+
       <DashboardHeading>VIP Business Stats</DashboardHeading>
 <StatsSection>
   {Object.entries(totals).map(([key, value]) => (
@@ -569,140 +705,6 @@ useEffect(() => {
     <StatValue> ₹{hosalaryExpenses}</StatValue>
   </StatCard>
 </StatsSection>
-
-<DashboardHeading>P & L Stats</DashboardHeading>
-  <StatsSection>  
-  <StatCard>
-    <StatLabel>Total  Income</StatLabel>
-    <StatValue>₹{totalIncome}</StatValue>
-  </StatCard>
-  <StatCard>
-    <StatLabel>Total  Expense</StatLabel>
-    <StatValue>₹{totalExpenses}</StatValue>
-  </StatCard>
-</StatsSection>
-
-      <GraphSection>
-        <GraphItem>
-          <GraphTitle>P & L </GraphTitle>
-          <ChartContainer>
-  <Doughnut
-    data={{
-      labels: ["Total Income", "Total Expenses"],
-      datasets: [
-        {
-          data: [totalIncome, totalExpenses], // Use dynamic data
-          backgroundColor: ["#4CAF50", "#F44336"], // Colors for each segment
-          hoverBackgroundColor: [ "#81C784","#E57373"], // Colors on hover
-        },
-      ],
-    }}
-    options={{
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: "top", // Adjust the legend position
-        },
-      },
-    }}
-  />
-</ChartContainer>
-        </GraphItem>
-
-    
-
-<GraphItem>
-  <GraphTitle>Profit</GraphTitle>
-  <ChartContainer>
-    <Bar
-      data={{
-        labels: ["Company Buisness", "Franchise Sales", "Other Sales"], // Labels for each bar
-        datasets: [
-          {
-            label: "Profit Data", // Dataset label
-            data: [CompanyDataTotals.paymentPaid, totalPaymentPaid, totalSale], // Dynamic data values
-            backgroundColor: ["#4CAF50", "#4CAF50", "#4CAF50"], // Colors for bars
-            hoverBackgroundColor: ["#81C784", "#81C784", "#81C784"], // Hover colors
-          },
-        ],
-      }}
-      options={{
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false, // Legend is hidden since there's one dataset
-          },
-          tooltip: {
-            enabled: true, // Tooltips enabled for better interaction
-          },
-        },
-        scales: {
-          x: {
-            grid: {
-              display: false, // Remove gridlines for a cleaner x-axis
-            },
-          },
-          y: {
-            beginAtZero: true, // Ensure y-axis starts from 0
-            ticks: {
-              precision: 0, // Avoid decimals if the values are integers
-            },
-          },
-        },
-      }}
-    />
-  </ChartContainer>
-</GraphItem>
-
-
-<GraphItem>
-  <GraphTitle>Loss</GraphTitle>
-  <ChartContainer>
-    <Bar
-      data={{
-        labels: ["Vip Buisness", "Vip Franchise Buisness", "Other Expense","Ho Salary"], // Labels for each bar
-        datasets: [
-          {
-            label: "Profit Data", // Dataset label
-            data: [totals.paymentPaid,vipFranchiseTotals.paymentPaid,othExpenses,hosalaryExpenses], // Dynamic data values
-            backgroundColor: ["#F44336", "#F44336", "#F44336"], // Colors for bars
-            hoverBackgroundColor: ["#E57373", "#E57373", "#E57373"], // Hover colors
-          },
-        ],
-      }}
-      options={{
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false, // Legend is hidden since there's one dataset
-          },
-          tooltip: {
-            enabled: true, // Tooltips enabled for better interaction
-          },
-        },
-        scales: {
-          x: {
-            grid: {
-              display: false, // Remove gridlines for a cleaner x-axis
-            },
-          },
-          y: {
-            beginAtZero: true, // Ensure y-axis starts from 0
-            ticks: {
-              precision: 0, // Avoid decimals if the values are integers
-            },
-          },
-        },
-      }}
-    />
-  </ChartContainer>
-</GraphItem>;
-
-        
-      </GraphSection>
 
       <BackButton onClick={handleBackClick}>Back</BackButton>
     </DashboardContainer>
