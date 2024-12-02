@@ -1,1 +1,1 @@
-export let URL=`https://ho.tiaedu.in/api`;
+export let URL=`http://localhost:8081/api`;
